@@ -1,0 +1,551 @@
+import { registerMvuSchema } from 'https://testingcf.jsdelivr.net/gh/StageDog/tavern_resource/dist/util/mvu_zod.js';
+
+const privateProfileSchema = z.object({
+  是否为处女: z.enum(['是', '否', '未知']).catch('未知').prefault('未知'),
+  初夜对象: z.string().prefault('未知'),
+  是否怀孕: z.enum(['是', '否', '未知']).catch('未知').prefault('未知'),
+  怀孕几率: z.string().prefault('0%'),
+  内射次数: z.coerce.number().prefault(0),
+  子嗣所属: z.string().prefault('无'),
+  配偶: z.string().prefault('无'),
+  生理期: z.enum(['安全期', '排卵期', '月经期', '黄体期', '妊娠期']).catch('安全期').prefault('安全期'),
+  排卵特征日: z.union([z.string(), z.coerce.number()]).prefault('未知'),
+  上次内射时间: z.string().prefault('无'),
+  纹身: z.string().prefault('无'),
+}).prefault({});
+
+const ailmentSchema = z.object({
+  说明: z.string().prefault(''),
+  程度: z.coerce.number().prefault(0).transform(v => _.clamp(v, 0, 100)),
+  进度: z.coerce.number().prefault(0).transform(v => _.clamp(v, 0, 100)),
+  持续: z.string().prefault(''),
+}).prefault({});
+const ailmentsMap = z.record(z.string().describe('异常状态名'), ailmentSchema).prefault({});
+
+const governmentTrendSchema = z.object({
+  层级: z.enum(['中央', '国家', '地方', '城市', '部门', '其他']).catch('其他').prefault('其他'),
+  机构: z.string().prefault('未知机构'),
+  地区: z.string().prefault(''),
+  时间: z.string().prefault(''),
+  行动: z.string().prefault(''),
+  描述: z.string().prefault(''),
+  状态: z.enum(['计划中', '执行中', '已结束', '已暂停']).catch('执行中').prefault('执行中'),
+}).prefault({});
+
+const militaryTrendSchema = z.object({
+  国家或势力: z.string().prefault('未知'),
+  军种: z.string().prefault('未知'),
+  地区: z.string().prefault(''),
+  时间: z.string().prefault(''),
+  类型: z.enum(['部署', '调动', '演习', '冲突', '战争', '戒备', '撤离', '其他']).catch('其他').prefault('其他'),
+  规模: z.string().prefault('未知'),
+  描述: z.string().prefault(''),
+  可信度: z.enum(['传闻', '部分证实', '已证实']).catch('部分证实').prefault('部分证实'),
+}).prefault({});
+
+const nationalTrendSchema = z.object({
+  国家: z.string().prefault('未知'),
+  领域: z.enum(['政治', '经济', '社会', '科技', '外交', '公共安全', '修行界', '灾害', '其他']).catch('其他').prefault('其他'),
+  时间: z.string().prefault(''),
+  描述: z.string().prefault(''),
+  影响: z.string().prefault(''),
+  趋势: z.enum(['改善', '稳定', '恶化', '不明']).catch('不明').prefault('不明'),
+}).prefault({});
+
+const globalTrendSchema = z.object({
+  涉及国家或地区: z.string().prefault('未知'),
+  类型: z.enum(['国际政治', '军事安全', '全球经济', '科技变革', '自然灾害', '超凡事件', '跨界事件', '其他']).catch('其他').prefault('其他'),
+  时间: z.string().prefault(''),
+  地点: z.string().prefault(''),
+  描述: z.string().prefault(''),
+  全球影响: z.string().prefault(''),
+}).prefault({});
+
+const worldSituationSchema = z.object({
+  范围: z.string().prefault('全球'),
+  主题: z.string().prefault('综合局势'),
+  态势: z.enum(['平稳', '升温', '紧张', '冲突', '危机', '失控', '缓和']).catch('平稳').prefault('平稳'),
+  紧张度: z.coerce.number().prefault(0).transform(v => _.clamp(v, 0, 100)),
+  主要参与方: z.string().prefault(''),
+  摘要: z.string().prefault(''),
+  对当前剧情影响: z.string().prefault(''),
+  更新时间: z.string().prefault(''),
+}).prefault({});
+
+export const Schema = z.object({
+  世界: z.object({
+    当前篇章: z.string().prefault('地球篇'),
+    当前剧情线: z.string().prefault('命定红瞳'),
+    当前时间: z.string().prefault('2012年1月19日'),
+    当前地点: z.string().prefault('未知'),
+    当前界域: z.string().prefault('地球'),
+    当前国家: z.string().prefault('中国'),
+    当前城市: z.object({
+      名称: z.string().prefault('未知'),
+      描述: z.string().prefault(''),
+      状态: z.string().prefault('正常'),
+      经济: z.string().prefault('未知'),
+      人口: z.union([z.string(), z.coerce.number()]).prefault('未知'),
+      治安等级: z.enum(['极佳', '良好', '一般', '较差', '混乱', '未知']).catch('未知').prefault('未知'),
+      天气: z.object({
+        天气状况: z.string().prefault('未知'),
+        温度: z.string().prefault('未知'),
+        体感: z.string().prefault('未知'),
+        特殊现象: z.string().prefault('无'),
+      }).prefault({}),
+    }).prefault({}),
+    危机程度: z.string().prefault('无'),
+    动向: z.record(
+      z.string().describe('事件标题'),
+      z.object({
+        类型: z.string().prefault('未知'),
+        地点: z.string().prefault(''),
+        描述: z.string().prefault(''),
+      })
+    ).prefault({})
+     .transform(data => _(data).entries().takeRight(8).fromPairs().value()),
+    政府动向: z.record(
+      z.string().describe('动向标题'),
+      governmentTrendSchema
+    ).prefault({})
+     .transform(data => _(data).entries().takeRight(8).fromPairs().value()),
+    军事动向: z.record(
+      z.string().describe('军事动向标题'),
+      militaryTrendSchema
+    ).prefault({})
+     .transform(data => _(data).entries().takeRight(8).fromPairs().value()),
+    国家动向: z.record(
+      z.string().describe('国家动向标题'),
+      nationalTrendSchema
+    ).prefault({})
+     .transform(data => _(data).entries().takeRight(8).fromPairs().value()),
+    全球动向: z.record(
+      z.string().describe('全球动向标题'),
+      globalTrendSchema
+    ).prefault({})
+     .transform(data => _(data).entries().takeRight(8).fromPairs().value()),
+    世界局势: z.record(
+      z.string().describe('局势主题'),
+      worldSituationSchema
+    ).prefault({})
+     .transform(data => _(data).entries().takeRight(6).fromPairs().value()),
+  }).prefault({}),
+
+  命轨: z.record(
+    z.string().describe('命轨事件标题'),
+    z.object({
+      时间: z.string().prefault(''),
+      相关人物: z.string().prefault('无'),
+      触发条件: z.string().prefault(''),
+      描述: z.string().prefault(''),
+    })
+  ).prefault({})
+   .transform(data => _(data).entries().takeRight(15).fromPairs().value()),
+
+  所处势力: z.record(
+    z.string().describe('势力全称'),
+    z.object({
+      类型: z.enum(['国家政府', '地方政府', '军警机构', '宗门', '世家', '企业', '社会组织', '地下势力', '临时团体', '其他']).catch('其他').prefault('其他'),
+      身份: z.string().prefault('普通成员'),
+      与主角关系: z.string().prefault('所属'),
+      势力状态: z.string().prefault('正常'),
+      势力宗旨: z.string().prefault('未知'),
+      所在地: z.string().prefault('未知'),
+      影响力: z.string().prefault('未知'),
+      势力人数: z.string().prefault('未知'),
+      势力动向: z.string().prefault(''),
+      关键人物: z.record(
+        z.string().describe('人物姓名'),
+        z.object({
+          身份: z.string().prefault('未知'),
+          立场: z.string().prefault('未知'),
+          当前状态: z.string().prefault('正常'),
+        })
+      ).prefault({}),
+      描述: z.string().prefault(''),
+    })
+  ).prefault({}),
+
+  主角: z.object({
+    境界: z.string().prefault('凡人（DC:0）'),
+    身份: z.string().prefault('无'),
+    生命: z.coerce.number().prefault(100).transform(v => _.clamp(v, 0, 100)),
+    精血: z.coerce.number().prefault(100).transform(v => _.clamp(v, 0, 100)),
+    灵力: z.coerce.number().prefault(100).transform(v => _.clamp(v, 0, 100)),
+    修为: z.coerce.number().prefault(0).transform(v => _.clamp(v, 0, 100)),
+    神识: z.coerce.number().prefault(100).transform(v => _.clamp(v, 0, 100)),
+    道心: z.coerce.number().prefault(50).transform(v => _.clamp(v, 0, 100)),
+    神念: z.string().prefault('无'),
+    气运: z.record(
+      z.string().describe('气运名'),
+      z.object({
+        类型: z.string().prefault('被动'),
+        效果: z.string().prefault(''),
+        使用状态: z.string().prefault('常驻'),
+        剩余次数: z.union([z.null(), z.string(), z.coerce.number()]).prefault(null),
+        压制状态: z.string().prefault('正常'),
+      })
+    ).prefault({}),
+    灵根: z.string().prefault('未知'),
+    状态: z.string().prefault('无异常'),
+    异常状态: ailmentsMap,
+    衣着: z.record(z.string(), z.string()).prefault({}),
+    身体状态: z.record(z.string(), z.string()).prefault({
+      面容: '无异常',
+      胸腹: '无异常',
+      腰臀: '无异常',
+      性器: '无异常',
+      后庭: '无异常',
+      手足: '无异常',
+    }),
+    炼丹: z.object({
+      阶级: z.string().catch('未入门').prefault('未入门'),
+      熟练度: z.coerce.number().catch(0).transform(v => (isNaN(v) ? 0 : _.clamp(v, 0, 100))).prefault(0),
+      成功率: z.coerce.number().catch(0).transform(v => (isNaN(v) ? 0 : _.clamp(v, 0, 100))).prefault(0),
+      次数: z.coerce.number().catch(0).transform(v => (isNaN(v) ? 0 : v)).prefault(0),
+    }).catch({}).prefault({}),
+    炼器: z.object({
+      阶级: z.string().catch('未入门').prefault('未入门'),
+      熟练度: z.coerce.number().catch(0).transform(v => (isNaN(v) ? 0 : _.clamp(v, 0, 100))).prefault(0),
+      成功率: z.coerce.number().catch(0).transform(v => (isNaN(v) ? 0 : _.clamp(v, 0, 100))).prefault(0),
+      次数: z.coerce.number().catch(0).transform(v => (isNaN(v) ? 0 : v)).prefault(0),
+    }).catch({}).prefault({}),
+    储物袋: z.record(
+      z.string().describe('物品名'),
+      z.object({
+        描述: z.string().prefault(''),
+        数量: z.coerce.number().prefault(1),
+      })
+    ).prefault({})
+     .transform(data => _.pickBy(data, ({ 数量 }) => 数量 > 0)),
+    功法: z.record(
+      z.string().describe('功法名'),
+      z.object({
+        类型: z.string().prefault('未知'),
+        品阶: z.string().prefault('玄'),
+        境界: z.string().prefault('未入门'),
+        熟练度: z.coerce.number().prefault(0).transform(v => _.clamp(v, 0, 100)),
+        效果: z.string().prefault(''),
+        描述: z.string().prefault(''),
+      })
+    ).prefault({}),
+    器物: z.record(
+      z.string().describe('器物名'),
+      z.object({
+        等级: z.string().prefault('未知'),
+        类型: z.string().prefault('未知'),
+        品阶: z.string().prefault('玄'),
+        效果: z.string().prefault(''),
+        佩戴: z.string().prefault('否'),
+        损耗度: z.coerce.number().prefault(0).transform(v => _.clamp(v, 0, 100)),
+        状态: z.string().prefault('正常'),
+        描述: z.string().prefault(''),
+      })
+    ).prefault({}),
+    资产: z.object({
+      货币: z.record(
+        z.string().describe('币种名'),
+        z.object({
+          数量: z.coerce.number().catch(0).transform(v => (isNaN(v) ? 0 : v)).prefault(0),
+          单位: z.string().prefault('枚'),
+          说明: z.string().prefault(''),
+        })
+      ).prefault({}),
+      产业: z.record(
+        z.string().describe('资产名'),
+        z.object({
+          类别: z.enum(['实体', '数字', '金融', '修真', '其他']).catch('其他').prefault('其他'),
+          类型: z.string().prefault('未知'),
+          估值: z.string().prefault('未知'),
+          状态: z.enum(['自有', '共有', '租用', '抵押', '冻结', '受损', '已失去', '未知']).catch('未知').prefault('未知'),
+          所在地: z.string().prefault('未知'),
+          收益: z.string().prefault('无'),
+          描述: z.string().prefault(''),
+        })
+      ).prefault({}),
+      _股市: z.object({
+        持仓: z.record(
+          z.string().describe('股票名'),
+          z.object({
+            股数: z.coerce.number().catch(0).prefault(0),
+            成本: z.coerce.number().catch(0).prefault(0),
+          })
+        ).prefault({}),
+        累计盈亏: z.coerce.number().catch(0).prefault(0),
+      }).catch({}).prefault({}),
+    }).catch({}).prefault({}),
+    社会地位: z.object({
+      阶层: z.enum(['底层', '平民', '小康', '富裕', '权贵', '隐世', '未知']).catch('未知').prefault('未知'),
+      世俗声望: z.coerce.number().prefault(0).transform(v => _.clamp(v, 0, 100)),
+      修行界声望: z.coerce.number().prefault(0).transform(v => _.clamp(v, 0, 100)),
+      风评: z.enum(['无名', '正面', '毁誉参半', '负面', '恶名']).catch('无名').prefault('无名'),
+      名号: z.string().prefault('无'),
+      影响范围: z.string().prefault('无'),
+      头衔: z.record(
+        z.string().describe('头衔名'),
+        z.object({
+          授予方: z.string().prefault('未知'),
+          时间: z.string().prefault(''),
+          效力: z.string().prefault(''),
+          状态: z.enum(['生效', '暂停', '褫夺', '过期']).catch('生效').prefault('生效'),
+          描述: z.string().prefault(''),
+        })
+      ).prefault({}),
+      污点: z.record(
+        z.string().describe('污点事件名'),
+        z.object({
+          类型: z.enum(['通缉', '悬赏', '债务', '丑闻', '结仇', '违纪', '其他']).catch('其他').prefault('其他'),
+          时间: z.string().prefault(''),
+          知情方: z.string().prefault('未知'),
+          扩散: z.enum(['未暴露', '小范围', '公开', '已消除']).catch('小范围').prefault('小范围'),
+          影响: z.string().prefault(''),
+          描述: z.string().prefault(''),
+        })
+      ).prefault({}),
+    }).catch({}).prefault({}),
+  }).prefault({}),
+
+  灵宠: z.record(
+    z.string().describe('灵宠姓名'),
+    z.object({
+      性别: z.string().prefault('未知'),
+      种族: z.string().prefault('未知'),
+      境界: z.string().prefault('未知'),
+      生命: z.coerce.number().prefault(100).transform(v => _.clamp(v, 0, 100)),
+      灵力: z.coerce.number().prefault(100).transform(v => _.clamp(v, 0, 100)),
+      修为: z.coerce.number().prefault(0).transform(v => _.clamp(v, 0, 100)),
+      亲密度: z.coerce.number().prefault(50).transform(v => _.clamp(v, 0, 100)),
+      性格: z.string().prefault('未知'),
+      容貌外观: z.string().prefault('未知'),
+      神通: z.string().prefault('无'),
+      状态: z.string().prefault('正常'),
+      异常状态: ailmentsMap,
+    })
+  ).prefault({}),
+
+  女性角色档案: z.record(
+    z.string().describe('角色名'),
+    z.object({
+      种族: z.string().prefault('人族'),
+      境界: z.string().prefault('凡人'),
+      生命: z.coerce.number().prefault(100).transform(v => _.clamp(v, 0, 100)),
+      灵力: z.coerce.number().prefault(100).transform(v => _.clamp(v, 0, 100)),
+      修为: z.coerce.number().prefault(0).transform(v => _.clamp(v, 0, 100)),
+      道心: z.coerce.number().prefault(50).transform(v => _.clamp(v, 0, 100)),
+      年龄: z.string().prefault('未知'),
+      职业: z.string().prefault('未知'),
+      与user的关系: z.string().prefault('陌生'),
+      性格: z.string().prefault('未知'),
+      身高: z.string().prefault('未知'),
+      三围: z.string().prefault('未知'),
+      好感度: z.coerce.number().prefault(0).transform(v => _.clamp(v, -100, 100)),
+      异常状态: ailmentsMap,
+      背景: z.string().prefault(''),
+      神通: z.string().prefault('无'),
+      功法: z.string().prefault('无'),
+      器物: z.string().prefault('无'),
+      外貌基础档案: z.record(z.string(), z.string()).prefault({}),
+      颜值评分: z.coerce.number().prefault(50).transform(v => _.clamp(v, 0, 100)),
+      衣着基准: z.record(z.string(), z.string()).prefault({}),
+      私密档案: privateProfileSchema,
+      首次登场时间: z.string().prefault(''),
+      最后出现位置: z.string().prefault(''),
+      最后行为: z.string().prefault(''),
+      当前立绘: z.string().prefault(''),
+      头像表情: z.string().prefault('默认'),
+    })
+  ).prefault({}),
+
+  男性角色档案: z.record(
+    z.string().describe('角色名'),
+    z.object({
+      种族: z.string().prefault('人族'),
+      境界: z.string().prefault('凡人'),
+      生命: z.coerce.number().prefault(100).transform(v => _.clamp(v, 0, 100)),
+      灵力: z.coerce.number().prefault(100).transform(v => _.clamp(v, 0, 100)),
+      修为: z.coerce.number().prefault(0).transform(v => _.clamp(v, 0, 100)),
+      道心: z.coerce.number().prefault(50).transform(v => _.clamp(v, 0, 100)),
+      年龄: z.string().prefault('未知'),
+      职业: z.string().prefault('未知'),
+      与user的关系: z.string().prefault('陌生'),
+      性格: z.string().prefault('未知'),
+      身高: z.string().prefault('未知'),
+      眷属: z.record(z.string(), z.string()).prefault({}),
+      好感度: z.coerce.number().prefault(0).transform(v => _.clamp(v, -100, 100)),
+      异常状态: ailmentsMap,
+      背景: z.string().prefault(''),
+      神通: z.string().prefault('无'),
+      功法: z.string().prefault('无'),
+      器物: z.string().prefault('无'),
+      外貌基础档案: z.record(z.string(), z.string()).prefault({}),
+      颜值评分: z.coerce.number().prefault(50).transform(v => _.clamp(v, 0, 100)),
+      衣着基准: z.record(z.string(), z.string()).prefault({}),
+      首次登场时间: z.string().prefault(''),
+      最后出现位置: z.string().prefault(''),
+      最后行为: z.string().prefault(''),
+      当前立绘: z.string().prefault(''),
+      头像表情: z.string().prefault('默认'),
+    })
+  ).prefault({}),
+
+  当前在场互动女性: z.record(
+    z.string().describe('角色名'),
+    z.object({
+      境界: z.string().prefault('凡人'),
+      生命: z.coerce.number().prefault(100).transform(v => _.clamp(v, 0, 100)),
+      灵力: z.coerce.number().prefault(100).transform(v => _.clamp(v, 0, 100)),
+      修为: z.coerce.number().prefault(0).transform(v => _.clamp(v, 0, 100)),
+      道心: z.coerce.number().prefault(50).transform(v => _.clamp(v, 0, 100)),
+      年龄: z.string().prefault('未知'),
+      职业: z.string().prefault('未知'),
+      与user的关系: z.string().prefault('陌生'),
+      自我认知: z.string().prefault(''),
+      当前行为: z.string().prefault(''),
+      三围: z.string().prefault('未知'),
+      好感度: z.coerce.number().prefault(0).transform(v => _.clamp(v, -100, 100)),
+      异常状态: ailmentsMap,
+      外貌描写: z.string().prefault(''),
+      颜值评分: z.coerce.number().prefault(50).transform(v => _.clamp(v, 0, 100)),
+      衣着: z.record(z.string(), z.string()).prefault({}),
+      身体状态: z.object({
+        朱唇: z.string().prefault('无异常'),
+        乳房: z.string().prefault('无异常'),
+        美臀: z.string().prefault('无异常'),
+        小穴: z.string().prefault('无异常'),
+        菊穴: z.string().prefault('无异常'),
+        玉足: z.string().prefault('无异常'),
+      }).prefault({}),
+      私密档案: privateProfileSchema,
+      头像表情: z.string().prefault('默认'),
+    })
+  ).prefault({}),
+
+  当前在场互动男性: z.record(
+    z.string().describe('角色名'),
+    z.object({
+      境界: z.string().prefault('凡人'),
+      生命: z.coerce.number().prefault(100).transform(v => _.clamp(v, 0, 100)),
+      灵力: z.coerce.number().prefault(100).transform(v => _.clamp(v, 0, 100)),
+      修为: z.coerce.number().prefault(0).transform(v => _.clamp(v, 0, 100)),
+      道心: z.coerce.number().prefault(50).transform(v => _.clamp(v, 0, 100)),
+      年龄: z.string().prefault('未知'),
+      职业: z.string().prefault('未知'),
+      与user的关系: z.string().prefault('陌生'),
+      眷属: z.record(z.string(), z.string()).prefault({}),
+      当前行为: z.string().prefault(''),
+      好感度: z.coerce.number().prefault(0).transform(v => _.clamp(v, -100, 100)),
+      异常状态: ailmentsMap,
+      外貌描写: z.string().prefault(''),
+      颜值评分: z.coerce.number().prefault(50).transform(v => _.clamp(v, 0, 100)),
+      衣着: z.record(z.string(), z.string()).prefault({}),
+      头像表情: z.string().prefault('默认'),
+    })
+  ).prefault({}),
+
+  角色追踪事件: z.record(
+    z.string().describe('事件名'),
+    z.object({
+      角色: z.string().prefault(''),
+      类型: z.literal('受孕追踪').catch('受孕追踪').prefault('受孕追踪'),
+      发生日期: z.string().prefault(''),
+      发生时间: z.string().prefault(''),
+      关联对象: z.string().prefault(''),
+      周期阶段: z.enum(['安全期', '排卵期', '月经期', '黄体期', '妊娠期']).catch('安全期').prefault('安全期'),
+      怀孕几率: z.string().prefault('0%'),
+      内射次数: z.coerce.number().prefault(1),
+      当前状态: z.enum(['待处理', '疑似观察', '已确认怀孕', '孕期推进', '临产待处理']).catch('待处理').prefault('待处理'),
+      下次检查日期: z.string().prefault(''),
+      确认截止日期: z.string().prefault(''),
+      预产期: z.string().prefault(''),
+      父亲来源: z.string().prefault('未知'),
+      处理备注: z.string().prefault(''),
+    })
+  ).prefault({}),
+
+  羁绊: z.record(
+    z.string().describe('角色名'),
+    z.object({
+      档案来源: z.enum(['女性角色档案', '男性角色档案', '灵宠']).catch('女性角色档案').prefault('女性角色档案'),
+      性别: z.string().prefault('未知'),
+      羁绊类型: z.enum(['亲情', '友情', '爱情', '师徒', '契约', '宿敌', '恩义', '其他']).catch('其他').prefault('其他'),
+      羁绊阶段: z.enum(['初识', '熟悉', '信赖', '深厚', '生死与共', '决裂']).catch('初识').prefault('初识'),
+      羁绊值: z.coerce.number().prefault(0).transform(v => _.clamp(v, 0, 100)),
+      与user的关系: z.string().prefault('陌生'),
+      建立时间: z.string().prefault(''),
+      当前状态: z.string().prefault('稳定'),
+      关系描述: z.string().prefault(''),
+      心声: z.string().prefault(''),
+      共同经历: z.record(
+        z.string().describe('经历标题'),
+        z.object({
+          时间: z.string().prefault(''),
+          描述: z.string().prefault(''),
+        })
+      ).prefault({})
+       .transform(data => _(data).entries().takeRight(10).fromPairs().value()),
+    })
+  ).prefault({}),
+
+  机遇: z.record(
+    z.string().describe('机遇名'),
+    z.object({
+      类型: z.enum(['奇遇', '传承', '探索', '交易', '关系', '修行', '其他']).catch('其他').prefault('其他'),
+      来源: z.string().prefault(''),
+      难度: z.string().prefault('未知'),
+      目标: z.string().prefault(''),
+      机缘: z.string().prefault(''),
+      引言: z.string().prefault(''),
+      有效期: z.string().prefault(''),
+      风险: z.string().prefault(''),
+    })
+  ).prefault({})
+   .transform(data => _(data).entries().takeRight(5).fromPairs().value()),
+
+  任务: z.record(
+    z.string().describe('任务名'),
+    z.object({
+      类型: z.enum(['主线', '支线', '委托', '势力', '修行', '调查', '生存', '其他']).catch('其他').prefault('其他'),
+      委托方: z.string().prefault('自主目标'),
+      状态: z.enum(['进行中', '已完成', '已失败', '已放弃']).catch('进行中').prefault('进行中'),
+      优先级: z.enum(['低', '中', '高', '紧急']).catch('中').prefault('中'),
+      目标: z.string().prefault(''),
+      当前阶段: z.string().prefault(''),
+      进度: z.coerce.number().prefault(0).transform(v => _.clamp(v, 0, 100)),
+      下一步: z.string().prefault(''),
+      截止时间: z.string().prefault(''),
+      奖励: z.string().prefault('未知'),
+      失败后果: z.string().prefault('未知'),
+      描述: z.string().prefault(''),
+    })
+  ).prefault({})
+   .transform(data => _(data).entries().takeRight(10).fromPairs().value()),
+
+  互联网: z.record(
+    z.string().describe('帖子或网页标识'),
+    z.object({
+      平台: z.string().prefault('互联网'),
+      标题: z.string().prefault(''),
+      来源: z.string().prefault(''),
+      时间: z.string().prefault(''),
+      标签: z.string().prefault('PUBLIC FEED'),
+      热度: z.union([z.string(), z.coerce.number()]).prefault(''),
+      内容: z.string().prefault(''),
+      评论: z.string().prefault(''),
+    })
+  ).prefault({})
+   .transform(data => _(data).entries().takeRight(8).fromPairs().value()),
+
+  讯息: z.record(
+    z.string().describe('消息标识'),
+    z.object({
+      发送者: z.string().prefault('未知'),
+      时间: z.string().prefault(''),
+      内容: z.string().prefault(''),
+    })
+  ).prefault({})
+   .transform(data => _(data).entries().takeRight(5).fromPairs().value()),
+});
+
+$(() => {
+  registerMvuSchema(Schema);
+});

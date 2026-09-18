@@ -1,0 +1,2844 @@
+```html
+<!doctype html>
+<!-- 酒馆助手局部正则「查找」：/<战斗>([\s\S]*?)<\/战斗>/g  捕获组会填进 #bt-raw-seed -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>尘世命轨 · 战斗 1.10</title>
+<style>
+:root{
+  color-scheme:dark;--void:#07080c;--void-2:#0c0f16;--paper:#f4f0e6;--soft:#c9c3b4;
+  --mute:#8d877a;--dim:#5c5850;--line:rgba(244,240,230,.08);--line-2:rgba(244,240,230,.2);
+  --gold:#d4b07a;--gold-dim:rgba(212,176,122,.16);--gold-line:rgba(212,176,122,.42);
+  --life:#7dcea0;--mana:#7eb8c9;--blood:#d45b52;--spirit:#b7a0e0;--bone:#c9a227;
+  --serif:"Songti SC","STSong","Noto Serif SC","SimSun",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei",sans-serif;
+  --mono:"SF Mono","JetBrains Mono",ui-monospace,monospace
+}
+*{box-sizing:border-box;margin:0;padding:0}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.bt{position:relative;max-width:820px;margin:0 auto;padding:0 0 10px;color:var(--paper);
+  font:13px/1.4 var(--sans);overflow:hidden;isolation:isolate;
+  background:
+    radial-gradient(ellipse 42% 26% at 50% 8%,rgba(212,91,82,.12),transparent 62%),
+    radial-gradient(ellipse 50% 28% at 50% 100%,rgba(212,176,122,.11),transparent 68%),
+    linear-gradient(180deg,#12161f,var(--void));
+  border:1px solid var(--gold-line);
+  box-shadow:inset 0 1px 0 rgba(244,240,230,.06),0 18px 40px rgba(0,0,0,.35)}
+.bt>:not(.bt-fx):not(.bt-flash):not(.bt-banner):not(.bt-dbg-btn):not(.bt-dbg){position:relative;z-index:2}
+.bt:before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:
+    linear-gradient(180deg,rgba(0,0,0,.08),transparent 18%,transparent 78%,rgba(0,0,0,.28)),
+    repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,255,255,.015) 4px);
+  opacity:.7}
+.bt.is-win{box-shadow:inset 0 0 90px rgba(212,176,122,.16),0 18px 40px rgba(0,0,0,.35)}
+.bt.is-lose{box-shadow:inset 0 0 90px rgba(212,91,82,.2),0 18px 40px rgba(0,0,0,.35)}
+.bt.is-flee{box-shadow:inset 0 0 80px rgba(126,184,201,.12),0 18px 40px rgba(0,0,0,.35)}
+.bt-fx{position:absolute;inset:0;pointer-events:none;z-index:30;overflow:hidden}
+.bt-flash{position:absolute;inset:0;z-index:28;pointer-events:none;opacity:0}
+.bt-flash.on.hit{background:radial-gradient(ellipse at 50% 20%,rgba(255,96,74,.3),transparent 56%)}
+.bt-flash.on.hurt{background:radial-gradient(ellipse at 50% 82%,rgba(212,70,62,.4),transparent 58%)}
+.bt-flash.on.guard{background:radial-gradient(ellipse at 50% 80%,rgba(212,176,122,.24),transparent 60%)}
+.bt-flash.on.cast{background:radial-gradient(ellipse at 50% 50%,rgba(126,184,201,.2),transparent 60%)}
+.bt-flash.on.burn{background:radial-gradient(ellipse at 50% 78%,rgba(230,90,40,.34),transparent 62%)}
+.bt-flash.on{opacity:1}
+.bt-flash.go{opacity:0;transition:opacity .62s ease}
+.bt-banner{position:absolute;left:50%;top:36%;z-index:50;transform:translate(-50%,10px) scale(.9);
+  padding:9px 26px;border:1px solid var(--gold-line);background:rgba(8,10,14,.86);
+  font:600 22px/1 var(--serif);letter-spacing:.32em;color:var(--gold);pointer-events:none;opacity:0;
+  box-shadow:0 12px 36px rgba(0,0,0,.5);white-space:nowrap}
+.bt-banner.on{opacity:1;transform:translate(-50%,0) scale(1);transition:.32s cubic-bezier(.2,.8,.2,1)}
+.bt-banner.win{letter-spacing:.46em;color:#f3d7a0}
+.bt-banner.lose{color:#f0a8a2;border-color:rgba(212,91,82,.55)}
+.bt-banner.flee{color:#9fd4e2;border-color:rgba(126,184,201,.45)}
+.bt-float{position:absolute;font:800 28px/1 var(--serif);letter-spacing:.04em;
+  animation:btPop 1.75s cubic-bezier(.16,.8,.3,1) forwards;text-shadow:0 3px 0 rgba(0,0,0,.55),0 0 12px rgba(0,0,0,.35);white-space:nowrap;z-index:40}
+.bt-float.dmg{color:#ff6b5c}.bt-float.block{color:#f0d08a;font-size:18px}
+.bt-float.heal{color:#8ee0b0}.bt-float.soul{color:#c9b4f0;font-size:18px}
+.bt-float.miss{color:#e8dcc0;font-size:24px}
+.bt-float.big{font-size:32px}.bt-float.crit{font-size:36px;color:#ffd27a;
+  text-shadow:0 0 14px rgba(255,90,60,.7),0 3px 0 #000}
+@keyframes btPop{0%{opacity:0;transform:translate(-50%,8px) scale(.7)}
+  12%{opacity:1;transform:translate(-50%,-8px) scale(1.16)}
+  58%{opacity:1;transform:translate(-50%,-26px) scale(1.04)}
+  100%{opacity:0;transform:translate(-50%,-78px) scale(.9)}}
+.bt-impact{position:absolute;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;
+  border:2px solid #fff4dc;box-shadow:0 0 16px rgba(255,186,120,.75);animation:btImpact .7s ease forwards;z-index:41}
+@keyframes btImpact{0%{transform:scale(.25);opacity:1}100%{transform:scale(3.4);opacity:0}}
+.bt-cast{position:absolute;left:50%;top:44%;z-index:42;font:600 17px/1 var(--serif);letter-spacing:.2em;
+  color:var(--gold);opacity:0;animation:btCast .9s ease forwards;text-shadow:0 2px 14px rgba(0,0,0,.65);pointer-events:none}
+.bt-cast.atk{color:#ff8a7a}.bt-cast.def{color:#f0d08a}.bt-cast.util{color:#9fd4e2}
+@keyframes btCast{0%{opacity:0;transform:translate(-50%,12px) scale(.88)}
+  18%{opacity:1;transform:translate(-50%,0) scale(1.06)}
+  62%{opacity:1;transform:translate(-50%,-6px) scale(1)}
+  100%{opacity:0;transform:translate(-50%,-22px)}}
+.bt-card-fly{position:absolute;z-index:45;pointer-events:none;margin:0!important;
+  transition:transform .72s cubic-bezier(.2,.85,.2,1),opacity .72s}
+.bt-card-fly.go{transform:translateY(-78px) scale(1.08) rotate(-7deg);opacity:0}
+.bt-spark{position:absolute;bottom:28%;width:5px;height:5px;border-radius:50%;background:#f0d08a;
+  box-shadow:0 0 8px #f0d08a;animation:btSpark 1.2s ease-out forwards}
+@keyframes btSpark{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-120px) scale(.3);opacity:0}}
+.bt-dbg-btn{position:absolute;left:6px;top:6px;z-index:55;width:22px;height:22px;
+  font:700 9px/1 var(--mono);letter-spacing:.04em;color:var(--gold);
+  border:1px solid var(--gold-line);background:rgba(8,10,14,.82)}
+.bt-dbg-btn.on,.bt-dbg-btn:hover{background:var(--gold-dim);color:var(--paper)}
+.bt-dbg{position:absolute;left:6px;top:32px;z-index:56;width:min(440px,calc(100% - 12px));
+  padding:8px;border:1px solid var(--gold-line);background:rgba(8,10,14,.94);
+  box-shadow:0 12px 28px rgba(0,0,0,.45)}
+.bt-dbg[hidden]{display:none!important}
+.bt-dbg .hd{display:flex;align-items:center;gap:6px;margin-bottom:6px;
+  font:600 11px/1 var(--serif);letter-spacing:.08em;color:var(--gold)}
+.bt-dbg .hd span{flex:1;font:400 9px/1.3 var(--sans);letter-spacing:0;color:var(--dim)}
+.bt-dbg .hd button{padding:3px 7px;border:1px solid var(--line-2);color:var(--soft);background:rgba(0,0,0,.25)}
+.bt-dbg .hd button:hover{border-color:var(--gold-line);color:var(--gold)}
+.bt-dbg textarea{display:block;width:100%;min-height:168px;max-height:280px;resize:vertical;
+  padding:8px;border:1px solid var(--line-2);background:#0b0d12;color:var(--paper);
+  font:400 11px/1.55 var(--mono)}
+.bt-top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:6px 10px 2px 32px}
+.bt-top h2{font:600 15px/1.2 var(--serif);letter-spacing:.06em}
+.bt-top small{display:inline;margin:0;font:400 9px/1.3 var(--mono);letter-spacing:.08em;color:var(--dim)}
+.bt-orbs{display:flex;gap:4px;align-items:center;flex:0 0 auto}
+.bt-orb{width:12px;height:12px;border-radius:50%;border:1px solid var(--gold-line);
+  background:radial-gradient(circle at 35% 30%,#f0e0b8,var(--gold) 55%,#8a6d3a);
+  box-shadow:0 0 6px rgba(212,176,122,.4);animation:btOrb 2.2s ease-in-out infinite}
+.bt-orb.off{background:#1a1c22;border-color:var(--line-2);box-shadow:none;animation:none}
+@keyframes btOrb{0%,100%{filter:brightness(1)}50%{filter:brightness(1.28)}}
+.bt-turn{margin-left:auto;min-width:44px;text-align:center;padding:3px 7px;border:1px solid var(--gold-line);background:var(--gold-dim)}
+.bt-turn b{display:block;font:600 16px/1 var(--mono);color:var(--gold)}
+.bt-turn span{font:400 8px/1 var(--mono);letter-spacing:.16em;color:var(--dim)}
+.bt-ver{display:block;margin-top:2px;font:400 8px/1 var(--mono);letter-spacing:.08em;color:var(--dim)}
+.bt-stage{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;padding:2px 8px 0}
+.bt-party{display:flex;align-items:stretch;justify-content:center;gap:6px;margin:4px 8px 0;flex-wrap:wrap}
+.bt-actor{position:relative;padding:4px 6px 6px;text-align:center;
+  background:linear-gradient(180deg,rgba(255,255,255,.04),transparent 50%),rgba(8,10,14,.5);
+  border:1px solid var(--line-2);transition:border-color .18s,box-shadow .18s,transform .18s}
+.bt-actor.foe{width:122px;min-height:0;border:1px solid rgba(212,91,82,.35);
+  background:radial-gradient(circle at 50% 0%,rgba(212,91,82,.14),transparent 46%),rgba(8,10,14,.55);
+  box-shadow:inset 0 0 0 1px rgba(212,91,82,.08);cursor:pointer}
+.bt-actor.foe:hover:not(.is-dead){transform:translateY(-2px);border-color:rgba(212,91,82,.6)}
+.bt-stage.many .bt-actor.foe{width:110px;padding:4px 5px 5px}
+.bt-stage.crowd .bt-actor.foe{width:96px;padding:3px 4px 4px}
+.bt-actor.foe.is-aim,.bt-actor.me.is-aim,.bt-actor.ally.is-aim{border-color:var(--gold-line);
+  box-shadow:inset 0 0 0 1px rgba(212,176,122,.4),0 0 0 1px var(--gold-line),0 0 18px rgba(212,176,122,.18);z-index:2}
+.bt-aim{display:none;position:absolute;left:50%;top:2px;transform:translateX(-50%);z-index:3;
+  padding:1px 5px;font:700 8px/1 var(--mono);letter-spacing:.16em;color:#1a1408;background:var(--gold)}
+.bt-actor.is-aim .bt-aim{display:block}
+.bt-actor.foe.is-dead{opacity:.38;cursor:default;filter:grayscale(.4)}
+.bt-actor.is-low .bt-hpbar{border-color:rgba(212,91,82,.55);box-shadow:0 0 8px rgba(212,91,82,.28)}
+.bt-actor.is-danger{animation:btDanger 1.15s ease-in-out infinite}
+@keyframes btDanger{0%,100%{box-shadow:inset 0 0 0 1px rgba(212,91,82,.12)}
+  50%{box-shadow:inset 0 0 0 1px rgba(212,91,82,.55),0 0 14px rgba(212,91,82,.22)}}
+.bt-actor.me{display:flex;flex-direction:column;align-items:center;gap:0;margin:0;min-height:0;padding:4px 6px 6px;flex:0 0 136px;width:136px;cursor:pointer;
+  border-color:var(--gold-line);background:linear-gradient(180deg,rgba(212,176,122,.07),rgba(8,10,14,.5))}
+.bt-actor.ally{flex:0 0 112px;width:112px;padding:4px 6px 6px;min-height:0;border-color:rgba(125,206,160,.35);cursor:pointer;
+  background:linear-gradient(180deg,rgba(125,206,160,.08),rgba(8,10,14,.5))}
+.bt-actor.ally.is-dead{opacity:.38}
+.bt-actor.is-hit{animation:btHit .62s cubic-bezier(.2,.7,.3,1)}
+@keyframes btHit{0%,100%{transform:translateX(0)}18%{transform:translateX(-11px) rotate(-1.2deg)}
+  42%{transform:translateX(8px) rotate(1deg)}68%{transform:translateX(-4px)}}
+.bt-actor.is-hit .bt-seal:after{content:"";position:absolute;inset:0;z-index:2;
+  background:rgba(255,230,210,.38);animation:btFlashFace .55s ease}
+.bt-seal{width:76px;height:76px;margin:0 auto 4px;display:grid;place-items:center;border-radius:50%;overflow:hidden;position:relative;
+  font:600 28px/1 var(--serif);color:#e8b4b0;border:2px solid rgba(212,91,82,.5);
+  background:radial-gradient(circle at 38% 30%,rgba(232,180,176,.28),#1a1012 62%,#0e0a0c);
+  box-shadow:0 0 0 4px rgba(212,91,82,.08),0 4px 12px rgba(0,0,0,.35)}
+.bt-actor.me .bt-seal{width:80px;height:80px;margin:0 auto 4px;flex:none;font-size:28px;color:var(--gold);border-color:var(--gold-line);
+  background:radial-gradient(circle at 38% 30%,rgba(232,210,160,.28),#16120c 62%,#0c0a08);
+  box-shadow:0 0 0 3px rgba(212,176,122,.1)}
+.bt-actor.ally .bt-seal{width:68px;height:68px;margin:0 auto 4px;font-size:24px;color:var(--life);
+  border-color:rgba(125,206,160,.45);background:radial-gradient(circle at 38% 30%,rgba(160,232,176,.25),#10140f 62%,#080c08)}
+.bt-stage.crowd .bt-seal{width:64px;height:64px;font-size:22px}
+.bt-seal b{position:relative;z-index:0}
+.bt-seal img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}
+.bt-me-main{width:100%;min-width:0;text-align:center}
+.bt-actor.me .bt-orbs{margin-top:4px;justify-content:center}
+.bt-actor h3{font:600 13px/1.15 var(--serif);letter-spacing:.04em}
+.bt-actor.me h3{font-size:14px}
+.bt-actor h3 i{display:block;margin-top:1px;font:400 9px/1.25 var(--mono);color:var(--gold);font-style:normal;letter-spacing:.04em}
+.bt-hp{margin-top:4px;clear:both}
+.bt-hp-row{display:flex;align-items:center;gap:4px}
+.bt-shield{min-width:18px;height:18px;display:grid;place-items:center;font:700 9px/1 var(--mono);
+  color:var(--void);background:var(--gold);clip-path:polygon(50% 0,100% 22%,86% 100%,14% 100%,0 22%)}
+.bt-hpbar{flex:1;height:11px;background:#14181e;border:1px solid rgba(125,206,160,.3);overflow:hidden;position:relative}
+.bt-hpbar i.ghost{position:absolute;top:0;left:0;height:100%;background:#8a3832;opacity:.72;transition:width .9s ease}
+.bt-hpbar i.hp{display:block;position:relative;z-index:1;height:100%;
+  background:linear-gradient(180deg,#c8f0d8,#5eaa7e 46%,#3d7a58);transition:width .28s ease}
+.bt-hpbar i.hp:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);
+  animation:btBarShine 2.8s ease-in-out infinite}
+@keyframes btBarShine{0%,70%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
+.bt-hpbar i.blk{position:absolute;top:0;height:100%;z-index:1;background:linear-gradient(90deg,#b8944a,var(--gold));opacity:.92;pointer-events:none}
+.bt-hpbar b{position:absolute;inset:0;display:grid;place-items:center;font:600 8px/1 var(--mono);color:#f4f0e6;text-shadow:0 1px 2px #000;z-index:2}
+.bt-subbars{margin-top:3px;display:grid;gap:2px}
+.bt-sbar{height:3px;background:rgba(255,255,255,.06);overflow:hidden}
+.bt-sbar i{display:block;height:100%;transition:width .3s}
+.bt-sbar.sp i{background:var(--spirit)}.bt-sbar.mp i{background:var(--mana)}.bt-sbar.bl i{background:var(--blood)}
+.bt-powers{display:flex;flex-wrap:wrap;justify-content:center;gap:2px;margin-top:4px}
+.bt-actor.me .bt-powers{justify-content:center}
+.bt-pow{padding:1px 4px;font:500 9px/1.2 var(--sans);border:1px solid var(--line-2);color:var(--soft);background:rgba(0,0,0,.2)}
+.bt-pow.block{color:var(--gold);border-color:var(--gold-line);background:var(--gold-dim)}
+.bt-pow.bad{color:#f0a8a2;border-color:rgba(212,91,82,.4)}
+.bt-pow.good{color:var(--life);border-color:rgba(125,206,160,.35)}
+.bt-intents{display:flex;flex-wrap:wrap;justify-content:center;gap:3px;margin:0 0 3px}
+.bt-ib{min-width:42px;padding:2px 4px 2px;text-align:center;border:1px solid rgba(212,91,82,.5);
+  background:rgba(18,6,6,.75);clip-path:polygon(12% 0,88% 0,100% 18%,100% 82%,88% 100%,12% 100%,0 82%,0 18%)}
+.bt-ib:not(.def):not(.heal):not(.soul){animation:btIntent 1.7s ease-in-out infinite}
+.bt-ib em{display:block;font:700 13px/1 var(--serif);color:#f0c2bc;font-style:normal}
+.bt-ib span{display:block;font-size:8px;line-height:1.2;color:var(--soft)}
+.bt-ib.def{border-color:var(--gold-line);background:rgba(30,24,10,.5)}
+.bt-ib.def em{color:var(--gold)}
+.bt-ib.soul{border-color:rgba(183,160,224,.45);background:rgba(20,12,32,.55)}
+.bt-ib.soul em{color:#d4c4f0}
+.bt-ib.heal{border-color:rgba(125,206,160,.45);background:rgba(10,24,16,.55)}
+.bt-ib.heal em{color:var(--life)}
+.bt-actor.me.is-down{opacity:.42;filter:grayscale(.35)}
+.bt-next{margin:0 0 3px;font:400 8px/1.3 var(--mono);letter-spacing:.06em;color:var(--dim)}
+.bt-stage.crowd .bt-actor h3 i,.bt-stage.crowd .bt-powers{display:none}
+.bt-slash{position:absolute;width:48%;height:3px;right:7%;top:26%;
+  background:linear-gradient(90deg,transparent,var(--gold),#fff8e8);
+  transform-origin:right center;animation:btSlash .62s ease forwards;box-shadow:0 0 16px rgba(212,176,122,.75)}
+@keyframes btSlash{0%{opacity:0;transform:rotate(-28deg) scaleX(.15)}
+  32%{opacity:1;transform:rotate(-28deg) scaleX(1)}
+  100%{opacity:0;transform:rotate(-14deg) scaleX(1.12)}}
+.bt-vs{display:flex;align-items:center;justify-content:center;gap:10px;margin:3px 18px 1px;
+  font:600 10px/1 var(--serif);letter-spacing:.42em;color:var(--dim)}
+.bt-vs:before,.bt-vs:after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--gold-line),transparent)}
+.bt-card em{display:block;margin-top:4px;font:400 9px/1 var(--mono);color:var(--gold);font-style:normal}
+.bt-rail{display:flex;justify-content:center;flex-wrap:wrap;gap:4px;padding:6px 8px 0;margin-top:2px;border-top:1px solid var(--line)}
+.bt-rail:before{content:"常驻 · 场景";flex:0 0 100%;text-align:center;font:400 8px/1 var(--mono);letter-spacing:.16em;color:var(--dim);margin-bottom:1px}
+.bt-pill{display:flex;flex-direction:row;align-items:center;gap:5px;max-width:none;
+  padding:5px 8px;border:1px solid var(--line-2);background:rgba(10,12,16,.78);
+  font:500 11px/1 var(--serif);letter-spacing:.04em;color:var(--soft);transition:.15s;text-align:left}
+.bt-pill b{margin-left:0;font:700 11px/1 var(--mono);color:var(--gold)}
+.bt-pill i{display:none}
+.bt-pill:hover:not(:disabled){border-color:var(--gold-line);color:var(--paper);background:var(--gold-dim);transform:translateY(-1px)}
+.bt-pill:active:not(:disabled){transform:translateY(1px)}
+.bt-pill.on{border-color:var(--gold-line);color:var(--gold);background:var(--gold-dim);box-shadow:0 0 10px rgba(212,176,122,.2)}
+.bt-pill:disabled{opacity:.34;cursor:default}
+.bt-pill.scene{border-style:dashed;color:var(--bone)}
+.bt-fate{margin:16px auto 0;max-width:520px;text-align:left}
+.bt-fate p{margin:0 0 8px}
+.bt-fate-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
+.bt-fate-row b{flex:1;font:600 14px/1.2 var(--serif)}
+.bt-pick{padding:5px 12px;border:1px solid var(--line-2);color:var(--soft);background:rgba(0,0,0,.2)}
+.bt-pick.on{border-color:var(--gold-line);color:var(--gold);background:var(--gold-dim)}
+.bt-pick.kill.on{border-color:rgba(212,91,82,.55);color:#f0a8a2;background:rgba(212,91,82,.12)}
+.bt-energy{display:flex;align-items:center;justify-content:center;gap:6px;padding:2px 8px 0;
+  font:400 9px/1 var(--mono);letter-spacing:.1em;color:var(--dim)}
+.bt-play-row{display:flex;align-items:flex-end;gap:8px;padding:0 8px}
+.bt-fan-wrap{flex:1;min-width:0;min-height:148px;padding:0}
+.bt-fan{display:flex;justify-content:center;align-items:flex-end;height:148px;padding:0 8px 2px;overflow-x:auto;overflow-y:visible}
+.bt-card{position:relative;width:104px;height:136px;flex:0 0 104px;margin:0 -18px;padding:10px 8px 8px;
+  text-align:left;contain:layout;border:1px solid #8a7350;
+  background:linear-gradient(180deg,#221c16,#12100c);
+  box-shadow:0 8px 16px rgba(0,0,0,.45),inset 0 0 0 1px #0a0907,inset 0 0 0 2px rgba(212,176,122,.35);
+  transform:rotate(var(--r,0deg)) translateY(var(--y,0));transform-origin:50% 140%;
+  transition:transform .16s cubic-bezier(.2,.8,.2,1),border-color .16s,box-shadow .16s;z-index:1}
+.bt-card:before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:rgba(232,220,190,.2)}
+.bt-card.atk:before{background:var(--blood)}.bt-card.def:before{background:var(--gold)}.bt-card.util:before{background:var(--mana)}
+.bt-card:hover:not(:disabled){transform:rotate(0) translateY(-26px) scale(1.07);z-index:20;
+  border-color:#e6c98a;box-shadow:0 16px 28px rgba(0,0,0,.5),0 0 18px rgba(212,176,122,.2)}
+.bt-card:active:not(:disabled){transform:rotate(0) translateY(-14px) scale(1.02)}
+.bt-card:disabled{filter:grayscale(.35) brightness(.72);cursor:default}
+.bt-card u{position:absolute;left:6px;top:7px;text-decoration:none;width:18px;height:18px;
+  display:grid;place-items:center;font:700 10px/1 var(--mono);color:#1a1408;background:var(--gold);border-radius:50%}
+.bt-card b{display:block;margin-top:18px;font:600 14px/1.15 var(--serif);letter-spacing:.03em}
+.bt-card i{display:block;margin-top:6px;font:400 10px/1.35 var(--sans);color:var(--soft);font-style:normal}
+.bt-card.atk{background:linear-gradient(180deg,#2a1816,#12100c)}
+.bt-card.def{background:linear-gradient(180deg,#221c12,#12100c)}
+.bt-card.util{background:linear-gradient(180deg,#141c20,#12100c)}
+.bt-piles{display:flex;flex-direction:column;gap:4px;flex:0 0 auto}
+.bt-pile{width:36px;height:40px;border:1px solid var(--line-2);background:#12141a;display:grid;place-items:center;
+  font:400 8px/1.15 var(--mono);color:var(--dim);letter-spacing:.04em;cursor:pointer}
+.bt-pile:hover{border-color:var(--gold-line)}
+.bt-pile b{display:block;font:700 14px/1 var(--mono);color:var(--gold)}
+.bt-btn{padding:8px 16px;font:600 12px/1 var(--sans);letter-spacing:.14em;color:#1a1408;
+  background:linear-gradient(180deg,#e6c98a,var(--gold));border:1px solid #f0d9a4;
+  box-shadow:0 2px 0 #8a6d3a,0 6px 14px rgba(0,0,0,.25);transition:transform .12s,filter .12s}
+.bt-play-row .bt-btn{align-self:flex-end;margin-bottom:10px;padding:10px 12px;letter-spacing:.1em}
+.bt-btn:hover:not(:disabled){filter:brightness(1.08);transform:translateY(-1px)}
+.bt-btn:active:not(:disabled){transform:translateY(1px);box-shadow:0 0 0 #8a6d3a}
+.bt-btn:disabled{opacity:.35;cursor:default}
+.bt-btn.nudge{animation:btNudge 1.35s ease-in-out infinite;box-shadow:0 0 16px rgba(212,176,122,.4)}
+@keyframes btNudge{0%,100%{filter:brightness(1)}50%{filter:brightness(1.14)}}
+.bt-log{margin:8px 10px 0;padding:6px 8px;max-height:88px;overflow-y:auto;border:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(0,0,0,.2),rgba(0,0,0,.36))}
+.bt-log p{font:400 10px/1.55 var(--mono);color:var(--soft);padding:1px 2px}
+.bt-log p.me{color:var(--gold)}.bt-log p.foe{color:#e8b4b0}.bt-log p.ally{color:#9ed4b4}.bt-log p.sys{color:var(--dim)}
+.bt-log p.now{color:var(--paper);background:rgba(212,176,122,.1)}
+.bt-log p.hint{margin-top:4px;color:var(--gold);letter-spacing:.04em}
+.bt-over{margin:16px 20px 0;padding:22px 20px;border:1px solid var(--gold-line);
+  background:linear-gradient(180deg,rgba(212,176,122,.16),rgba(8,10,14,.6));text-align:center;
+  animation:btOverIn .42s cubic-bezier(.2,.8,.2,1) both}
+@keyframes btOverIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+.bt-over b{font:600 36px/1.1 var(--serif);letter-spacing:.18em}
+.bt-over p{margin-top:10px;font:400 12px/1.8 var(--sans);color:var(--soft)}
+.bt-over table{margin:14px auto 0;border-collapse:collapse;font:400 12px/1.6 var(--mono);text-align:left}
+.bt-over td{padding:3px 18px 3px 0;color:var(--mute)}.bt-over td:last-child{color:var(--paper)}
+.bt-report{display:block;width:100%;max-width:520px;margin:14px auto 10px;min-height:128px;
+  padding:10px 12px;resize:vertical;border:1px solid var(--line-2);background:rgba(0,0,0,.35);
+  color:var(--soft);font:400 11px/1.65 var(--mono);text-align:left}
+.bt-toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(14px);z-index:60;
+  padding:10px 18px;font:400 12px/1 var(--sans);letter-spacing:.06em;color:var(--void);background:var(--gold);
+  border:1px solid #f0d9a4;box-shadow:0 10px 28px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:.22s}
+.bt-toast.on{opacity:1;transform:translateX(-50%)}
+@keyframes btFlashFace{0%{opacity:.7}100%{opacity:0}}
+@keyframes btIntent{0%,100%{filter:brightness(1)}50%{filter:brightness(1.22)}}
+@media(prefers-reduced-motion:reduce){
+  *{transition-duration:.01ms!important;animation:none!important}
+  .bt-flash,.bt-banner,.bt-float,.bt-impact,.bt-cast,.bt-card-fly,.bt-spark{display:none!important}
+}
+</style>
+</head>
+<body>
+<div class="bt" id="bt">
+  <div class="bt-fx" id="bt-fx"></div>
+  <div class="bt-flash" id="bt-flash"></div>
+  <div class="bt-banner" id="bt-banner" hidden></div>
+  <button class="bt-dbg-btn" id="bt-dbg-btn" type="button" title="调试：查看替换前原文">调</button>
+  <div class="bt-dbg" id="bt-dbg" hidden>
+    <div class="hd">替换前原文 <span>可改后点应用，按这段重开</span>
+      <button type="button" data-dbg="reload">重载</button>
+      <button type="button" data-dbg="apply">应用</button>
+      <button type="button" data-dbg="close">×</button>
+    </div>
+    <textarea id="bt-dbg-src" spellcheck="false" placeholder="这里应出现战斗标签原文"></textarea>
+  </div>
+  <textarea id="bt-raw-seed" hidden>$1</textarea>
+  <div class="bt-top">
+    <div><h2 id="bt-title">战斗</h2><small id="bt-sub">正在结算</small></div>
+    <div class="bt-turn"><b id="bt-turn">1</b><span>回合</span><i class="bt-ver">1.10</i></div>
+  </div>
+  <div class="bt-stage" id="bt-foes"><section class="bt-actor foe" id="bt-foe"></section></div>
+  <div class="bt-vs" aria-hidden="true">战</div>
+  <div class="bt-party" id="bt-party"><section class="bt-actor me" id="bt-me" data-mark="me"></section></div>
+  <div id="bt-play"></div>
+  <div class="bt-log" id="bt-log"></div>
+</div>
+<div class="bt-toast" id="bt-toast"></div>
+<script>
+(function(){
+  var s=document.getElementById('bt-sub');if(s)s.textContent='运行外壳已启动';
+  window.addEventListener('error',function(e){if(e.target&&e.target!==window&&e.target!==document)return;
+    var d=e.message||(e.error&&e.error.message),n=document.getElementById('bt-sub');
+    if(n&&d)n.textContent='脚本错误 · '+d+(e.lineno?' @'+e.lineno+':'+e.colno:'')},true);
+  window.addEventListener('unhandledrejection',function(e){var n=document.getElementById('bt-sub');
+    if(n)n.textContent='异步错误 · '+((e.reason&&(e.reason.message||e.reason))||'未知')});
+})();
+</script>
+<script type="module">
+'use strict';
+const VER='1.11';
+const LOG_HINT='（根据战斗日志渲染战斗过程）';
+let debugOverride='';
+const AMP=String.fromCharCode(38);
+const qs=(s,r=document)=>r.querySelector(s);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>AMP+'#'+c.charCodeAt(0)+';');
+const obj=v=>(v&&typeof v==='object'&&!Array.isArray(v))?v:{},rows=v=>Object.entries(obj(v));
+const num=(v,f=0)=>Number.isFinite(Number(v))?Number(v):f;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const nodeOf=v=>Array.isArray(v)?nodeOf(v[0]):v;
+const unwrap=v=>Array.isArray(v)?unwrap(v[0]):v&&typeof v==='object'
+  ?Object.fromEntries(Object.entries(v).map(([k,x])=>[k,unwrap(x)])):v;
+const has=(a,k)=>Array.isArray(a)&&a.includes(k);
+const hasRoot=(who,k)=>has(who&&who.roots,k);
+
+const pools=dc=>({
+  体魄:Math.round(70+dc*.9),
+  神识:Math.round(20+dc*1.4),
+  精血:Math.round(60+dc*.5),
+  灵力池:Math.max(6,Math.round(dc*2.2)),
+  每回合灵力:dc>=88?5:dc>=49?4:3
+});
+const TIER={黄:.8,玄:1,地:1.3,天:1.7,仙:2.2};
+const dcTable=s=>{
+  const t=String(s??'');
+  if(/凡人/.test(t)&&!/炼气|筑基|金丹|元婴|出窍|化神|炼虚|合体|渡劫|大乘/.test(t))return 0;
+  if(/炼气/.test(t)){
+    if(/圆满/.test(t))return 10;
+    const cn=t.match(/([一二三四五六七八九])层/);
+    if(cn)return'一二三四五六七八九'.indexOf(cn[1])+1;
+    const ar=t.match(/(\d+)\s*层/);
+    return ar?clamp(num(ar[1]),1,9):1;
+  }
+  const minor=/大圆满|巅峰/.test(t)?3:/圆满/.test(t)?3:/后期/.test(t)?2:/中期/.test(t)?1:0;
+  const band=[['渡劫',173],['大乘',148],['合体',133],['炼虚',118],['化神',103],['出窍',88],['元婴',73],['金丹',49],['筑基',25]];
+  for(const [k,b] of band)if(t.includes(k))return b+minor*3;
+  return null;
+};
+const dcOf=s=>{
+  const t=String(s??'');
+  const tab=dcTable(t);
+  if(tab!=null)return tab;
+  const hit=t.match(/DC\s*[:：]?\s*(\d+)/i);
+  return hit?num(hit[1]):0;
+};
+const pressDc=a=>a&&a.基dc!=null?a.基dc:a&&a.dc||0;
+const gapMul=(a,b)=>{
+  const d=a-b;
+  if(d>=0)return clamp(1+d/45,1,2.1);
+  return clamp(1+d/32,.32,1);
+};
+const powMul=dc=>1+dc/60;
+function stackDamp(foeDc,vsDc){
+  const d=foeDc-vsDc;
+  if(d>=0)return 1;
+  return clamp(1+d/28,.08,1);
+}
+function stackQtyHp(n){
+  n=clamp(n,1,99);
+  return 1+.22*Math.min(n-1,12)+.04*Math.max(0,n-13);
+}
+function stackQtyAtk(n){
+  n=clamp(n,1,99);
+  return 1+.06*Math.min(n-1,10)+.015*Math.max(0,n-11);
+}
+function stackHpMul(n,foeDc,vsDc){
+  if(n<=1)return 1;
+  return 1+(stackQtyHp(n)-1)*stackDamp(foeDc,vsDc);
+}
+function stackAtkMul(n,foeDc,vsDc){
+  if(n<=1)return 1;
+  return Math.round((1+(stackQtyAtk(n)-1)*stackDamp(foeDc,vsDc))*100)/100;
+}
+function renameStack(a){
+  const base=a.显示||a.rec名||String(a.名||'').replace(/[×xX]\d+$/,'');
+  a.显示=base;
+  a.名=(a.stack||1)>1?`${base}×${a.stack}`:base;
+}
+const burnCost=who=>Math.max(1,Math.round(who.blMax*.15));
+const burnOk=who=>!who.burned&&who.bl>=who.blMax*.4&&who.bl>=burnCost(who);
+
+const ROOTS=[
+  {k:'雷',皮:'惊蛰',牌:{名:'引雷',类:'atk',费:1,基:5,词:['麻痹'],说:'伤 {d}，附麻痹'}},
+  {k:'火',皮:'灼芒',牌:{名:'燎原',类:'atk',费:1,基:4,词:['灼烧'],说:'伤 {d}，附灼烧'}},
+  {k:'木',皮:'蔓生',牌:{名:'春荣',类:'util',费:1,基:6,词:['回血'],说:'生命 +{d}'}},
+  {k:'金',皮:'锋锐',牌:{名:'断金',类:'atk',费:1,基:7,词:['穿透'],说:'伤 {d}，穿透'}},
+  {k:'水',皮:'沤蚀',牌:{名:'濯流',类:'def',费:1,基:6,词:['抽牌'],说:'格挡 {d}，抽 1'}},
+  {k:'土',皮:'垒石',牌:{名:'厚壁',类:'def',费:1,基:10,说:'格挡 {d}'}},
+  {k:'风',皮:'裂罡',牌:{名:'遁形',类:'def',费:1,基:0,词:['闪避'],说:'闪避下一次攻击'}},
+  {k:'冰',皮:'凝霜',牌:{名:'封息',类:'atk',费:1,基:3,词:['冰封'],说:'伤 {d}，附冰封'}}
+];
+const rootsOf=s=>ROOTS.filter(r=>String(s??'').includes(r.k)).slice(0,2);
+const skinOf=s=>{const r=rootsOf(s);return r.length?r[0].皮:'御气'};
+
+const SCENES={
+  湿滑:{名:'借滑',说:'你闪避下一次攻击。本场限用一次。',向:'self',f:s=>{s.me.闪避=true;return'借滑 → 你 闪避就绪'}},
+  高处:{名:'坠势',说:'对当前敌人造成 14 点伤害，你自己反伤 4。先点敌人。本场限用一次。',向:'foe',f:s=>{const t=needFoe(s);if(!t)return'';const d=hit(s,s.me,t,14);s.me.hp-=4;fxFloat(s.me,'-4','dmg');return`坠势 → ${woundText(t,d,s.me)}，你 血-4 余血${Math.max(0,s.me.hp)}`}},
+  狭窄:{名:'逼角',说:'当前敌人无法闪避，其遁术成功率 −20%。先点敌人。本场限用一次。',向:'foe',f:s=>{const t=needFoe(s);if(!t)return'';t.逼角=true;return`逼角 → ${t.名} 无法闪避，遁-20%`}},
+  开阔:{名:'拉开',说:'本场你的遁术成功率 +25%。本场限用一次。',向:'self',f:s=>{s.me.遁加=(s.me.遁加||0)+25;return'拉开 → 你 遁术+25%'}},
+  黑暗:{名:'匿影',说:'全体还活着的敌人下回合不敢进攻。本场限用一次。',向:'allFoe',f:s=>{livingFoes(s).forEach(t=>t.隐匿=true);return`匿影 → ${livingFoes(s).map(t=>t.名).join('、')||'无人'} 下回合不攻`}},
+  火场:{名:'借火',说:'当前敌人灼烧 +2 层，回合结束按层数掉血。先点敌人。本场限用一次。',向:'foe',f:s=>{const t=needFoe(s);if(!t)return'';t.灼烧=(t.灼烧||0)+2;return`借火 → ${t.名} 灼烧+2（现${t.灼烧}层）`}},
+  水域:{名:'引流',说:'当前敌人冰封，其下回合费用 −1。先点敌人。本场限用一次。',向:'foe',f:s=>{const t=needFoe(s);if(!t)return'';t.冰封=Math.max(t.冰封||0,1);return`引流 → ${t.名} 冰封，下回合费用-1`}},
+  废墟:{名:'塌方',说:'对当前敌人造成 10 点伤害，你与他各滞涩 +1。先点敌人。本场限用一次。',向:'foe',f:s=>{const t=needFoe(s);if(!t)return'';const d=hit(s,s.me,t,10);addSlow(s.me,1);addSlow(t,1);return`塌方 → ${woundText(t,d,s.me)}，你与其滞涩+1`}},
+  人群:{名:'挟众',说:'全体敌人下回合不敢进攻。本场限用一次。',向:'allFoe',f:s=>{livingFoes(s).forEach(t=>t.隐匿=true);return`挟众 → ${livingFoes(s).map(t=>t.名).join('、')||'无人'} 下回合不攻`}},
+  灵脉:{名:'汲脉',说:'你的灵力池立刻 +15，不超过上限。本场限用一次。',向:'self',f:s=>{const g=Math.min(15,s.me.mpMax-s.me.mp);s.me.mp+=g;return`汲脉 → 你 灵力池+${g}（现${s.me.mp}/${s.me.mpMax}）`}},
+  禁制:{名:'借阵',说:'本回合你造成的伤害 +30%。本场限用一次。',向:'self',f:s=>{s.me.增伤=(s.me.增伤||0)+.3;return'借阵 → 你 本回合伤害+30%'}},
+  雷雨:{名:'引雷',说:'你的下一张攻击牌伤害翻倍。雷灵根再附带麻痹。本场限用一次。',向:'self',f:s=>{s.me.翻倍=true;if(hasRoot(s.me,'雷'))s.me.雷雨麻=true;return`引雷 → 你 下一击翻倍${hasRoot(s.me,'雷')?'，并附麻痹':''}`}},
+  大风:{名:'乘风',说:'立刻抽 2 张，本回合费用 +1。本场限用一次。',向:'self',f:s=>{const n=drawPlus(s,s.me,2);s.me.费++;return`乘风 → 你 抽${n}，费用+1（现${s.me.费}）`}},
+  浓雾:{名:'迷障',说:'两回合内双方都看不见意图。本场限用一次。',向:'self',f:s=>{s.迷雾=2;return'迷障 → 双方两回合看不见意图'}},
+  绝境:{名:'背水',说:'仅当你生命低于三成可用。本回合伤害翻倍。本场限用一次。',向:'self',f:s=>{
+    if(s.me.hp>s.me.hpMax*.3)return'';s.me.增伤=(s.me.增伤||0)+1;return`背水 → 你 本回合伤害翻倍（生命${Math.round(s.me.hp)}/${s.me.hpMax}）`}}
+};
+const SCENE_ALIAS={暴风雪:'大风',风雪:'大风',暴雪:'大风',风刃:'大风',雷暴:'雷雨',雷电:'雷雨',迷雾:'浓雾',大雾:'浓雾',空域:'开阔',云层:'浓雾',电磁:'禁制',巷弄:'狭窄'};
+const STYLE_OK=new Set(['近战','枪战','巷战','车战','空战','海战','网战']);
+const STYLE_LEX={
+  枪战:{近身:'点射',威压:'压制',群压:'齐压',遁:'撤火',燃血:'拼命',群攻:'扫射',拳脚:'点射',架势:'掩体',绷带:'包扎',闪身:'卧倒',砸物:'投弹',御气:'开火',护体:'掩体',聚灵:'换匣',归元:'冷静',摄物:'瞄具',罡气:'钢筋',神照:'窥视',法相:'掩体墙',破虚:'穿甲',合道:'协同',劫火:'燃烧弹',攻:'点射',守:'掩体',扰:'压制射',破阵:'扫射',扫:'扫射',护:'掩护',援:'包扎'},
+  巷战:{近身:'贴身',威压:'压制',群压:'齐压',遁:'撤火',燃血:'拼命',群攻:'扫射',拳脚:'短打',架势:'掩体',绷带:'包扎',闪身:'闪墙',砸物:'投掷',御气:'开火',护体:'掩体',聚灵:'换匣',归元:'喘息',摄物:'瞄具',罡气:'钢筋',神照:'窥视',法相:'掩体墙',破虚:'穿甲',合道:'协同',劫火:'燃烧弹',攻:'开火',守:'掩体',扰:'压制射',破阵:'清巷',扫:'扫射',护:'掩护',援:'包扎'},
+  车战:{近身:'追撞',威压:'别车',群压:'围堵',遁:'甩尾',燃血:'红线',群攻:'连撞',拳脚:'别蹭',架势:'变道',绷带:'抢修',闪身:'急转',砸物:'逼停',御气:'冲撞',护体:'车壳',聚灵:'补油',归元:'回稳',摄物:'锁车',罡气:'保险杠',神照:'后视',法相:'护杠',破虚:'破窗',合道:'并线',劫火:'燃烧',攻:'冲撞',守:'变道',扰:'别车',破阵:'冲阵',扫:'刮擦',护:'护航',援:'抢修'},
+  空战:{近身:'咬尾',威压:'锁敌',群压:'编队锁',遁:'脱离',燃血:'过载',群攻:'齐射',拳脚:'机炮',架势:'机动',绷带:'损管',闪身:'急转',砸物:'投放',御气:'开火',护体:'护盾',聚灵:'补能',归元:'回稳',摄物:'锁定',罡气:'厚甲',神照:'雷达',法相:'力场',破虚:'穿甲',合道:'编队',劫火:'燃烧弹',攻:'齐射',守:'机动',扰:'干扰',破阵:'饱和',扫:'扫射',护:'护航',援:'损管'},
+  海战:{近身:'接舷',威压:'锁瞄',群压:'齐锁',遁:'脱离',燃血:'过载',群攻:'齐射',拳脚:'副炮',架势:'规避',绷带:'损管',闪身:'转向',砸物:'投放',御气:'主炮',护体:'舰壳',聚灵:'补能',归元:'回稳',摄物:'火控',罡气:'装甲',神照:'雷达',法相:'力场',破虚:'穿甲',合道:'编队',劫火:'燃烧弹',攻:'齐射',守:'规避',扰:'干扰',破阵:'齐射',扫:'侧舷',护:'护航',援:'损管'},
+  网战:{近身:'注入',威压:'断链',群压:'群断',遁:'断线',燃血:'过载',群攻:'扩散',拳脚:'探测',架势:'防火墙',绷带:'回滚',闪身:'跳转',砸物:'丢包',御气:'攻击包',护体:'防火墙',聚灵:'算力',归元:'重启',摄物:'追踪',罡气:'加密',神照:'嗅探',法相:'沙箱',破虚:'提权',合道:'联动',劫火:'熔断',攻:'攻击包',守:'防火墙',扰:'干扰',破阵:'清场',扫:'扫描',护:'加盾',援:'回滚'}
+};
+function inferStyle(tag){
+  const raw=String(tag&&tag.体裁||'').replace(/\s+/g,'');
+  if(STYLE_OK.has(raw))return raw;
+  const alias={修仙:'近战',肉搏:'近战',格斗:'近战',空中:'空战',飞机:'空战',狗斗:'空战',舰战:'海战',舰炮:'海战',黑客:'网战',网络:'网战',赛博:'网战'};
+  if(alias[raw])return alias[raw];
+  const blob=`${tag&&tag.体裁||''} ${tag&&tag.起因||''} ${tag&&tag.地形||''} ${tag&&tag.场景原文||''}`;
+  if(/战机|机群|空战|咬尾|飞行员|机舱|歼-|空域/.test(blob))return'空战';
+  if(/海战|舰炮|航母|鱼雷|接舷/.test(blob))return'海战';
+  if(/黑客|防火墙|木马|断网|入侵系统/.test(blob))return'网战';
+  if(/追车|飙车|高速路|别车|方向盘/.test(blob))return'车战';
+  if(/巷战|弄堂|巷口围/.test(blob))return'巷战';
+  if(/手枪|步枪|开枪|交火|枪战|点射|掩体射击/.test(blob))return'枪战';
+  return'近战';
+}
+function styleName(style,word){
+  const lex=STYLE_LEX[style];
+  return(lex&&lex[word])||word;
+}
+function stylePaintCard(c,style){
+  const lex=STYLE_LEX[style];
+  if(!lex||!c)return c;
+  let n='';
+  if(/^fan:quan/.test(c.id))n=lex.拳脚;
+  else if(/^fan:dang/.test(c.id))n=lex.架势;
+  else if(c.id==='fan:beng')n=lex.绷带;
+  else if(c.id==='fan:shan')n=lex.闪身;
+  else if(c.id==='fan:za')n=lex.砸物;
+  else if(c.id==='yuqi')n=lex.御气;
+  else if(c.id==='huti')n=lex.护体;
+  else if(c.id==='juling')n=lex.聚灵;
+  else if(c.id==='guiyuan')n=lex.归元;
+  else if(c.id==='sheshu')n=lex.摄物;
+  else if(c.id==='gangqi')n=lex.罡气;
+  else if(c.id==='shenzhao')n=lex.神照;
+  else if(c.id==='faxiang')n=lex.法相;
+  else if(c.id==='poxu')n=lex.破虚;
+  else if(c.id==='hedao')n=lex.合道;
+  else if(c.id==='jiehuo')n=lex.劫火;
+  if(n)c.名=n;
+  return c;
+}
+const SHI_KIND={
+  赐福:'up',加持:'up',余泽:'up',庇佑:'up',祝福:'up',
+  爆发:'burst',背水:'burst',逆转:'burst',
+  借力:'borrow',附体:'borrow',夺舍:'borrow',
+  结阵:'form',借阵:'form',祭器:'form',
+  虚弱:'down',重创:'down',重伤:'down',濒死:'down',
+  受伤:'wound',
+  反噬:'backlash',走火:'backlash',走火入魔:'backlash',
+  力竭:'tired',油尽:'tired',枯竭:'tired',灵力枯竭:'tired',
+  封印:'seal',压境:'seal',禁制:'seal',隔绝:'seal',
+  中毒:'poison',
+  破绽:'open',空门:'open',
+  入定:'daze',出定:'daze',恍惚:'daze',
+  神识受损:'spirit',神识刺痛:'spirit',
+  气运被压制:'fate',被压制:'fate'
+};
+const SHI_UP_KIND=new Set(['up','burst','borrow','form']);
+const SHI_WORDS_SORTED=Object.keys(SHI_KIND).sort((a,b)=>b.length-a.length);
+const SHI_WHO_ME=/^(你|我|主角|user)$/i;
+const SHI_WHO_FOE=/^(敌|敌人|全敌|对手|敌方)$/;
+const SHI_WHO_ALLY=/^(队友|全队友|友|己方)$/;
+const STAND_TIP={
+  melee:'打当前点选的敌人。不耗灵力，每回合一次。滞涩满 5 不能用。越级落后 12 DC 再打五折。',
+  press:'耗 1 神识。按境界 DC 差压神识；同境压不住。势只改出手轻重，不改谁能压谁。压不过会反噬。对低境界群体会溃散多人。每回合一次，与群压同锁。',
+  pressall:'耗 1 神识。对每个还活着的敌人尝试威压；压不住的跳过。低境界群体会被当场冲散。与威压同锁。',
+  burn:'一场一次。耗精血上限 15%。本回合伤害 ×1.8（火灵根 ×2），费用 +2。精血低于四成不能用。',
+  flee:'耗 1 灵力池 + 1 神识。按成功率掷骰脱战。失败则本回合不能出牌，且接下来挨打 ×1.5。',
+  spread:'点开后，单体攻牌和近身打全体还活着的敌人。主目标七成，其余四成。天生溅射 / 全体不受影响。只剩一人时关掉。'
+};
+
+const WORDS=['穿透','多段','溅射','破防','追击','吸灵','回气','抽牌','减费','滞涩',
+  '灼烧','冰封','麻痹','护盾','反伤','闪避','隐匿','驱散','封灵','摄魂','回血'];
+const splitWords=s=>String(s??'').split(/[·、,，\/|\s]+/).filter(w=>WORDS.includes(w)).slice(0,3);
+const tierOf=s=>{const t=String(s??'');for(const k of Object.keys(TIER))if(t.includes(k))return k;return'玄'};
+const TYPE_MAP=[
+  ['攻伐',['攻伐','剑诀','刀法','枪法','拳法','掌法','雷法','火法','术法','杀伐']],
+  ['护体',['护体','防御','罡气','体修']],
+  ['身法',['身法','遁术','轻功']],
+  ['御器',['御器','剑控','器修']],
+  ['神识',['神识','神念','灵魂','幻术']],
+  ['辅助',['辅助','内功','吐纳','疗伤','炼体']],
+  ['燃血',['燃血','秘术','禁术']]
+];
+function mapType(s){
+  const t=String(s??'');
+  for(const [k,keys] of TYPE_MAP)if(keys.some(x=>t.includes(x)))return k;
+  return'';
+}
+function isBlankKit(s){
+  const t=String(s||'').replace(/[。.\s]/g,'').trim();
+  return !t||/^(无|没有|无有|暂无|空|none|na)$/i.test(t);
+}
+function parseKit(s){
+  const raw=String(s||'').trim();
+  if(isBlankKit(raw))return null;
+  const m=raw.match(/^(.+?)\s*[（(]([^）)]*)[)）]\s*$/);
+  const 名=(m?m[1]:raw).replace(/[（(].*$/,'').trim();
+  if(!名)return null;
+  const bits=String(m?m[2]:'').split(/[·、,，\/|\s]+/).map(x=>x.trim()).filter(Boolean);
+  let 类='';
+  const 词=[];
+  bits.forEach(b=>{
+    const mapped=mapType(b);
+    if(mapped&&!类)类=mapped;
+    else if(/护具|甲胄|铠/.test(b)&&!类)类='护具';
+    else if(/法宝/.test(b)&&!类)类='法宝';
+    else if(/符箓|符纸/.test(b)&&!类)类='符箓';
+    else if(/兵器|兵刃|佩剑|刀|剑|戟|火器|枪械|热武|手枪|步枪/.test(b)&&!类)类='兵器';
+    splitWords(b).forEach(w=>{if(!词.includes(w))词.push(w)});
+    if(WORDS.includes(b)&&!词.includes(b))词.push(b);
+  });
+  return{名,类,词:词.slice(0,3)};
+}
+function kitIntent(kit,dc,from){
+  if(!kit)return null;
+  const 词=kit.词[0]||'';
+  if(kit.类==='护具')return null;
+  if(kit.类==='护体')return{名:kit.名,型:'def',基:Math.round(6+dc/18),说:kit.名,kit:from};
+  if(kit.类==='辅助'||词==='回血')return{名:kit.名,型:'heal',基:Math.round(6+dc/16),词:'回血',说:kit.名,kit:from};
+  if(kit.类==='神识'||词==='摄魂')return{名:kit.名,型:'special',词:'摄魂',说:kit.名,kit:from};
+  if(kit.类==='身法')return{名:kit.名,型:'special',词:词||'闪避',说:kit.名,kit:from};
+  const atk名=from==='器物'?`祭器·${kit.名}`:kit.名;
+  return{名:atk名,型:'atk',基:Math.round((from==='器物'?9:7)+dc/12),词,词表:kit.词,说:kit.名,kit:from};
+}
+const SKEL={
+  攻伐:{类:'atk',费:1,基:7},护体:{类:'def',费:1,基:10},身法:{类:'def',费:1,基:0,词:['闪避'],遁:8},
+  御器:{类:'atk',费:1,基:9,器:true},神识:{类:'util',费:0,识:1,基:12,词:['摄魂']},
+  辅助:{类:'util',费:1,基:6,词:['抽牌']},燃血:{类:'atk',费:1,血比:.08,基:16}
+};
+function tellOf(类,词,基){
+  if(类==='atk')return'伤 {d}';
+  if(类==='def')return has(词,'闪避')?'闪避下一次攻击':'格挡 {d}';
+  if(has(词,'回血'))return'生命 +{d}';
+  if(has(词,'摄魂'))return'神识 -{d}';
+  return 基?'生效 {d}':'生效';
+}
+
+function mortalCards(){
+  const mk=(id,名,类,费,基,词,说)=>({id,名,类,费,基,品:'黄',熟:40,词:词||[],说});
+  return[
+    mk('fan:quan','拳脚','atk',1,5,[],'伤 {d}'),
+    mk('fan:quan2','拳脚','atk',1,5,[],'伤 {d}'),
+    mk('fan:quan3','拳脚','atk',1,5,[],'伤 {d}'),
+    mk('fan:dang','架势','def',1,6,[],'格挡 {d}'),
+    mk('fan:dang2','架势','def',1,6,[],'格挡 {d}'),
+    mk('fan:beng','绷带','util',1,8,['回血'],'生命 +{d}'),
+    mk('fan:shan','闪身','def',1,0,['闪避'],'闪避下一次攻击'),
+    mk('fan:za','砸物','atk',1,4,['破防'],'伤 {d}，破防')
+  ];
+}
+function fateCards(dc,skin){
+  const nAtk=dc>=88?4:dc>=25?3:2,nDef=dc>=49?4:dc>=25?3:2,list=[];
+  for(let i=0;i<nAtk;i++)list.push({id:'yuqi',名:skin,类:'atk',费:1,基:6,品:'玄',熟:50,说:'伤 {d}'});
+  for(let i=0;i<nDef;i++)list.push({id:'huti',名:'护体',类:'def',费:1,基:8,品:'玄',熟:50,说:'格挡 {d}',身:'护体'});
+  list.push({id:'juling',名:'聚灵',类:'util',费:0,基:2,品:'玄',熟:50,白:true,说:'本回合灵力 +2，不耗池'});
+  if(dc>=25){
+    list.push({id:'guiyuan',名:'归元',类:'util',费:1,基:0,品:'玄',熟:50,说:'清 1 层滞涩，抽 1'});
+    list.push({id:'sheshu',名:'摄物',类:'util',费:1,基:0,品:'玄',熟:50,说:'目标下回合意图伤害 −40%'});
+  }
+  if(dc>=49){
+    list.push({id:'gangqi',名:'罡气',类:'def',费:2,基:dc>=73?18:14,品:'玄',熟:50,说:'格挡 {d}',身:'罡气'});
+    list.push({id:'shenzhao',名:'神照',类:'util',费:0,识:1,基:0,品:'玄',熟:50,看穿:dc>=88?4:dc>=73?3:2,
+      说:dc>=88?'看穿敌后四回合意图':dc>=73?'看穿敌后三回合意图':'看穿敌后两回合意图'});
+  }
+  if(dc>=103)list.push({id:'faxiang',名:'法相',类:'def',费:2,基:16,品:'玄',熟:50,词:['护盾'],说:'格挡 {d}，护盾持续到下回合',身:'法相'});
+  if(dc>=118)list.push({id:'poxu',名:'破虚',类:'atk',费:2,基:8,品:'玄',熟:50,词:['穿透'],说:'伤 {d}，穿透'});
+  if(dc>=133)list.push({id:'hedao',名:'合道',类:'util',费:1,基:0,品:'玄',熟:50,词:['抽牌','减费'],说:'抽 1，下一张减费'});
+  if(dc>=173)list.push({id:'jiehuo',名:'劫火',类:'atk',费:2,基:10,品:'玄',熟:50,词:['灼烧'],说:'伤 {d}，附灼烧'});
+  return list;
+}
+
+function artWords(d){
+  const from=splitWords(d.效果);
+  return from.length?from:splitWords(d.描述);
+}
+function artCards(hero){
+  const list=rows(hero.功法).map(([名,d])=>({名,d:obj(d)}))
+    .filter(({d})=>{
+      if(!mapType(d.类型))return false;
+      const stage=String(d.境界||'');
+      if((stage.includes('未入门')||stage==='')&&num(d.熟练度)===0)return false;
+      return true;
+    })
+    .sort((a,b)=>num(b.d.熟练度)-num(a.d.熟练度)).slice(0,3);
+  const out=[];
+  list.forEach(({名,d})=>{
+    const kind=mapType(d.类型),sk=SKEL[kind];
+    const 词=[...new Set([...(sk.词||[]),...artWords(d)])].slice(0,3);
+    const 多段=has(词,'多段');
+    const card={id:'art:'+名,名,类:sk.类,费:多段?2:sk.费,识:sk.识||0,
+      血比:sk.血比||0,基:多段?5:sk.基,品:tierOf(d.品阶||d.等级||d.描述),
+      熟:num(d.熟练度),词,器:sk.器,遁:sk.遁||0,说:tellOf(sk.类,词,sk.基)};
+    out.push(card);
+    const advanced=num(d.熟练度)>=90||/大成|圆满/.test(String(d.境界||''));
+    if(advanced){
+      const plus={...card,id:card.id+'+',名:名+'·真',
+        词:[...new Set([...词,card.类==='atk'?'追击':'抽牌'])].slice(0,3),
+        费:card.类==='atk'?Math.min(2,(card.费||1)+1):card.费,
+        基:Math.round((card.基||0)*1.25)};
+      plus.说=tellOf(plus.类,plus.词,plus.基);
+      out.push(plus);
+    }
+  });
+  return out;
+}
+function leafText(v){
+  return String(nodeOf(v)??'').trim();
+}
+function gearKey(k){
+  return !!k && !String(k).startsWith('_') && k!=='$meta';
+}
+function wornList(hero){
+  return rows(hero.器物)
+    .filter(([名])=>gearKey(名))
+    .map(([名,d])=>({名,d:obj(unwrap(d))}))
+    .filter(x=>{
+      const st=leafText(x.d.状态)||'正常';
+      return st!=='已损毁'&&st!=='不可用';
+    });
+}
+const ARMOR_HINT=/护具|甲胄|铠甲|护甲|盾牌/;
+const TALISMAN_HINT=/符箓|符纸|符咒/;
+const RELIC_HINT=/法宝/;
+const WEAPON_HINT=/兵器|兵刃|佩剑|刀|剑|戟|枪械|火器|热武|热武器|手枪|步枪|狙|冲锋|霰弹|机枪|火炮/;
+function wearKind(d,名=''){
+  const p=leafText(d&&d.佩戴),t=leafText(d&&d.类型),n=String(名||'');
+  const blob=`${p} ${t} ${n}`;
+  if(p==='护具'||ARMOR_HINT.test(p)||ARMOR_HINT.test(t)||ARMOR_HINT.test(n))return'护具';
+  if(p==='符箓'||TALISMAN_HINT.test(blob))return'符箓';
+  if(p==='法宝'||RELIC_HINT.test(t)||RELIC_HINT.test(p))return'法宝';
+  if(p==='兵器'||p==='是'||p==='已佩戴'||p==='佩戴'||WEAPON_HINT.test(blob)||['攻','兵','剑','刀','枪'].some(k=>t.includes(k)))return'兵器';
+  const words=splitWords((d&&(d.效果||d.描述))||'');
+  if(words.some(w=>['穿透','破防','多段','溅射','追击'].includes(w)))return'兵器';
+  if(words.some(w=>['护盾','反伤'].includes(w)))return'护具';
+  return'';
+}
+function isMundaneGear(d){
+  return /凡器|火器|枪械|热武/.test(leafText(d.等级)+leafText(d.类型)+leafText(d.描述));
+}
+function gearWorn(d){
+  return ['兵器','法宝','符箓','护具','是','已佩戴','佩戴'].includes(leafText(d.佩戴));
+}
+function gearTitle(kind,名,d){
+  if(kind==='符箓'||isMundaneGear(d))return 名;
+  return'祭器·'+名;
+}
+function gearCards(hero,roots){
+  const extra=roots.some(r=>r.k==='金')?2:0;
+  const list=wornList(hero).slice().sort((a,b)=>Number(gearWorn(b.d))-Number(gearWorn(a.d)));
+  const out=[];
+  list.forEach(item=>{
+    const kind=wearKind(item.d,item.名);
+    if(!kind||kind==='护具')return;
+    const 词=splitWords(item.d.效果||item.d.描述);
+    const mundane=isMundaneGear(item.d);
+    const 类=kind==='符箓'&&has(词,'回血')?'util':'atk';
+    const 基=kind==='符箓'?7:kind==='法宝'?11:(mundane?8:9)+extra;
+    const copies=gearWorn(item.d)?2:1;
+    for(let i=0;i<copies;i++){
+      out.push({
+        id:'gear:'+item.名+(i?':'+i:''),
+        名:gearTitle(kind,item.名,item.d),
+        类,费:1,基:类==='atk'?基:6,
+        品:tierOf(item.d.品阶||item.d.等级),熟:0,词,
+        耗:item.名,损:num(item.d.损耗度),
+        说:类==='atk'?'伤 {d}，器物损耗 +2':tellOf(类,词,6)
+      });
+    }
+  });
+  return out.slice(0,8);
+}
+function armorBlock(hero){
+  const armors=wornList(hero).filter(x=>wearKind(x.d,x.名)==='护具');
+  if(!armors.length)return 0;
+  return armors.reduce((best,x)=>{
+    const 品=TIER[tierOf(x.d.品阶||x.d.等级)]??1;
+    const v=Math.max(1,Math.round(8*品*(1-clamp(num(x.d.损耗度),0,100)/200)));
+    return Math.max(best,v);
+  },0);
+}
+
+const rnd=n=>{let x=(n>>>0)^0x9e3779b9;x=Math.imul(x^(x>>>15),0x85ebca6b);
+  x=Math.imul(x^(x>>>13),0xc2b2ae35);x^=x>>>16;return(x>>>0)/4294967296};
+function shuffle(arr,seed){const a=[...arr];for(let i=a.length-1;i>0;i--){
+  const j=Math.floor(rnd(seed+i*7919)*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+let S=null,busy=false;
+const hitMarks=[];
+function scheduleRender(ms){
+  busy=true;
+  clearTimeout(scheduleRender.t);
+  scheduleRender.t=setTimeout(()=>{busy=false;if(S)render()},Number.isFinite(ms)?ms:320);
+}
+
+function cardDmg(s,card,from,to,opt={}){
+  const 品=TIER[card.品||'玄']??1,熟=.85+clamp(num(card.熟),0,100)/100*.3;
+  const 器=card.损!==undefined?(1-clamp(num(card.损),0,100)/200):1;
+  let v=card.基*品*熟*powMul(from.dc)*gapMul(from.dc,to.dc)*器;
+  if(from.增伤)v*=1+from.增伤;
+  if(from.翻倍&&card.类==='atk'){v*=2;if(!opt.peek)from.翻倍=false}
+  if(has(card.词,'穿透')&&hasRoot(from,'金'))v*=1.15;
+  if(has(card.词,'追击')&&to.受伤)v*=1.4;
+  return Math.max(1,Math.round(v));
+}
+function cardBlock(s,card,who){
+  const 品=TIER[card.品||'玄']??1;
+  let v=card.基*品*powMul(who.dc);
+  if((card.身==='护体'||card.id==='huti')&&(hasRoot(who,'水')||hasRoot(who,'土')))v*=1.15;
+  if((card.身==='罡气'||card.id==='gangqi')&&hasRoot(who,'土'))v*=1.15;
+  return Math.max(1,Math.round(v));
+}
+function addSlow(who,n){
+  if(hasRoot(who,'土'))n=Math.max(0,n-1);
+  who.滞涩=(who.滞涩||0)+n;
+}
+function livingFoes(s){return(s.foes||(s.foe?[s.foe]:[])).filter(f=>f&&f.hp>0)}
+function livingParty(s){return[s.me,...(s.allies||[])].filter(a=>a&&a.hp>0)}
+function nm(a){return a&&a.名?a.名:'?'}
+function syncFoe(s){
+  if(!s.foes||!s.foes.length)s.foes=s.foe?[s.foe]:[];
+  const live=livingFoes(s);
+  if(!s.foe||s.foe.hp<=0||s.foes.indexOf(s.foe)<0)s.foe=live[0]||s.foes[0];
+  s.aim=Math.max(0,s.foes.indexOf(s.foe));
+  return s.foe;
+}
+function markOf(s){
+  const m=s.mark;
+  if(m&&m.k==='me')return s.me;
+  if(m&&m.k==='ally'){
+    const a=(s.allies||[])[m.i];
+    if(a&&a.hp>0)return a;
+  }
+  if(m&&m.k==='foe'){
+    const f=(s.foes||[])[m.i];
+    if(f&&f.hp>0)return f;
+  }
+  return syncFoe(s);
+}
+function setMark(s,k,i){
+  if(!s)return;
+  if(k==='foe'){
+    const f=s.foes&&s.foes[i];if(!f||f.hp<=0)return;
+    s.mark={k:'foe',i};s.aim=i;s.foe=f;
+  }else if(k==='ally'){
+    const a=s.allies&&s.allies[i];if(!a||a.hp<=0)return;
+    s.mark={k:'ally',i};
+  }else s.mark={k:'me',i:0};
+  render();
+}
+function peekFoe(s){
+  const t=markOf(s);
+  if((s.foes||[]).includes(t)&&t.hp>0)return t;
+  return syncFoe(s);
+}
+function needFoe(s){
+  const t=peekFoe(s);
+  if(!t||t.hp<=0)return null;
+  s.foe=t;s.aim=Math.max(0,s.foes.indexOf(t));
+  return t;
+}
+function needFriend(s){
+  const t=markOf(s);
+  if(t===s.me)return t;
+  if((s.allies||[]).includes(t)&&t.hp>0)return t;
+  return s.me;
+}
+function cardAim(c){
+  const w=c.词||[];
+  if(c.id==='juling'||c.id==='guiyuan'||c.id==='hedao')return'self';
+  if(c.id==='sheshu')return'foe';
+  if(c.id==='shenzhao')return'allFoe';
+  if(has(w,'回血'))return'friend';
+  if(c.类==='def'&&!has(w,'闪避'))return'friend';
+  if(has(w,'溅射'))return'cleave';
+  if(c.类==='atk'||has(w,'摄魂'))return'foe';
+  return'self';
+}
+function aimLabel(k){
+  return{self:'自身',friend:'友方',foe:'单体',cleave:'溅射',allFoe:'全体敌',spread:'群攻'}[k]||'';
+}
+function cardNativeAoE(c){
+  const w=c.词||[];
+  return has(w,'溅射')||c.id==='shenzhao';
+}
+function cardCanSpread(s,c){
+  return !!(s&&c&&c.类==='atk'&&c.基&&!cardNativeAoE(c)&&livingFoes(s).length>=2);
+}
+function wantSpread(s,c){return !!(s&&s.spread&&cardCanSpread(s,c))}
+function syncAim(s){return syncFoe(s)}
+function setAim(s,i){setMark(s,'foe',i)}
+function actorBox(s,who){
+  if(!s||who===s.me)return qs('#bt-me');
+  const fi=(s.foes||[]).indexOf(who);
+  if(fi>=0)return qs(`[data-foe="${fi}"]`)||qs('#bt-foe');
+  const ai=(s.allies||[]).indexOf(who);
+  if(ai>=0)return qs(`[data-ally="${ai}"]`);
+  return qs('#bt-foe');
+}
+function hasRec(o){
+  return !!(o&&typeof o==='object'&&!Array.isArray(o)&&(
+    o.境界!=null||o.生命!==undefined||o.灵力!==undefined||o.神通||o.功法||o.器物||o.神识!==undefined||o.职业
+  ));
+}
+function recPick(bag,名){
+  const all=obj(bag);
+  const direct=obj(nodeOf(all[名]));
+  if(hasRec(direct))return{key:名,rec:direct};
+  const key=Object.keys(all).find(k=>{
+    if(!k||!名||k.startsWith('_'))return false;
+    if(!(k===名||k.endsWith(名)||名.endsWith(k)))return false;
+    return hasRec(obj(nodeOf(all[k])));
+  });
+  return key?{key,rec:obj(nodeOf(all[key]))}:null;
+}
+function recOf(stat,名){
+  const live=recPick(stat.当前在场互动女性,名)||recPick(stat.当前在场互动男性,名);
+  const arch=recPick(stat.女性角色档案,名)||recPick(stat.男性角色档案,名);
+  if(!live&&!arch)return{};
+  const rec=Object.assign({},arch&&arch.rec,live&&live.rec);
+  if(arch&&arch.rec){
+    if(isBlankKit(rec.功法))rec.功法=arch.rec.功法;
+    if(isBlankKit(rec.器物))rec.器物=arch.rec.器物;
+  }
+  rec._key=(live||arch).key;
+  rec._live=!!live;
+  return rec;
+}
+
+const AVATAR_CUSTOM_KEY='mvu.customAvatars.v1',AVATAR_CHOICE_KEY='mvu.avatarChoice.v1';
+const PORTRAIT_CUSTOM_KEY='mvu.customPortraits.v1',PORTRAIT_CHOICE_KEY='mvu.portraitChoice.v1';
+const SAY_KEY='csmg.say.v1',OLD_AVATAR_KEY='csmg_avatars';
+const SAY_MOODS=['默认','微笑','开心','害羞','凝重','生气','悲伤','受伤','惊讶','战斗','厌恶','喜欢','迷糊'];
+const MEDIA_META_KEYS=[AVATAR_CUSTOM_KEY,PORTRAIT_CUSTOM_KEY,AVATAR_CHOICE_KEY,PORTRAIT_CHOICE_KEY];
+const mediaCache=Object.fromEntries(MEDIA_META_KEYS.map(k=>[k,{}])),mediaBlobs=new Map(),mediaMime=new Map();
+const isVideoSrc=src=>/\.mp4(?:$|\?)/i.test(src)||/^video\//i.test(mediaMime.get(src)||'');
+const isStill=src=>!!(src&&!isVideoSrc(src));
+const isFaceUrl=u=>typeof u==='string'&&/^(data:image\/|https?:\/\/|blob:)/i.test(u)&&isStill(u);
+function hostStorage(){
+  try{if(window.parent&&window.parent!==window&&window.parent.localStorage)return window.parent.localStorage}catch(e){}
+  return localStorage;
+}
+function hostWin(){
+  try{if(window.parent&&window.parent!==window&&window.parent.indexedDB)return window.parent}catch(e){}
+  return window;
+}
+function rememberBlob(id,blob,mime){
+  const old=mediaBlobs.get(id);
+  if(old){URL.revokeObjectURL(old);mediaMime.delete(old)}
+  const url=URL.createObjectURL(blob);
+  mediaBlobs.set(id,url);mediaMime.set(url,mime||blob.type||'');
+  return url;
+}
+function readLocalMap(key){try{const x=JSON.parse(hostStorage().getItem(key)||'{}');return x&&typeof x==='object'&&!Array.isArray(x)?x:{}}catch(e){return{}}}
+function idbOpen(){return new Promise((resolve,reject)=>{const idb=hostWin().indexedDB;if(!idb)return reject(Error('no idb'));const req=idb.open('csmg.nx-media.v1',1);req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains('files'))db.createObjectStore('files');if(!db.objectStoreNames.contains('meta'))db.createObjectStore('meta')};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
+let mediaDbP=null;
+const mediaDb=()=>mediaDbP||(mediaDbP=idbOpen());
+function idbOp(store,mode,fn){return mediaDb().then(db=>new Promise((resolve,reject)=>{const tx=db.transaction(store,mode),req=fn(tx.objectStore(store));req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)}))}
+const idbGet=(store,key)=>idbOp(store,'readonly',os=>os.get(key));
+function readJsonMap(key){return mediaCache[key]||{}}
+function getCustomList(key,name){const x=readJsonMap(key)[String(name??'').trim()];return Array.isArray(x)?x.filter(v=>v&&v.url):[]}
+function getChoice(key,name){const x=readJsonMap(key)[String(name??'').trim()];return typeof x==='string'?x:''}
+async function hydrateList(list){
+  const out=[];
+  for(const v of(Array.isArray(list)?list:[])){
+    if(!v)continue;
+    if(v.id){
+      const rec=await idbGet('files',v.id);
+      if(rec?.blob)out.push({id:v.id,label:v.label,mime:v.mime||rec.mime||rec.blob.type,url:rememberBlob(v.id,rec.blob,v.mime||rec.mime||rec.blob.type)});
+    }else if(v.url)out.push({url:v.url,label:v.label});
+  }
+  return out;
+}
+async function hydrateChoice(val){
+  if(!val)return'';
+  if(String(val).startsWith('id:')){
+    const rec=await idbGet('files',val);
+    return rec?.blob?rememberBlob(val,rec.blob,rec.mime||rec.blob.type):'';
+  }
+  return val;
+}
+async function hydrateMedia(){
+  try{
+    await mediaDb();
+    for(const key of[AVATAR_CUSTOM_KEY,PORTRAIT_CUSTOM_KEY]){
+      const raw=(await idbGet('meta',key))||readLocalMap(key),next={};
+      for(const[n,list]of Object.entries(raw||{}))next[n]=await hydrateList(list);
+      mediaCache[key]=next;
+    }
+    for(const key of[AVATAR_CHOICE_KEY,PORTRAIT_CHOICE_KEY]){
+      const raw=(await idbGet('meta',key))||readLocalMap(key),next={};
+      for(const[n,v]of Object.entries(raw||{})){const url=await hydrateChoice(v);if(url)next[n]=url}
+      mediaCache[key]=next;
+    }
+  }catch(e){
+    MEDIA_META_KEYS.forEach(k=>{mediaCache[k]=readLocalMap(k)});
+  }
+}
+const emotionKeys={默认:['default','默认'],微笑:['smile','微笑'],开心:['开心','happy'],害羞:['shy','害羞'],凝重:['serious','凝重'],生气:['angry','生气'],悲伤:['sad','悲伤'],受伤:['hurt','受伤'],惊讶:['surprised','惊讶'],战斗:['battle','战斗'],厌恶:['厌恶','disgusted'],喜欢:['喜欢','like'],迷糊:['迷糊','dazed']};
+const assetRoot='https://raw.githubusercontent.com/BlackTea-c/LIMIZI/main',manifestUrl=`${assetRoot}/assets/manifest.json`,treeApi='https://api.github.com/repos/BlackTea-c/LIMIZI/git/trees/main?recursive=1';
+const aliasMap={沐子:['沐子','李沐子'],李沐子:['李沐子','沐子'],祁谣:['祁谣','祁瑶'],祁瑶:['祁瑶','祁谣'],敖烈:['敖烈','熬烈'],熬烈:['熬烈','敖烈']};
+const cacheKey='csmg.assets.blacktea-c-limizi.v7',idx={chars:{},ui:[],ready:false};
+const rawUrl=p=>`${assetRoot}/${String(p).split('/').map(encodeURIComponent).join('/')}`;
+const isChinesePersonName=n=>/[\u3400-\u9fff]/.test(String(n||''))&&n!=='主角';
+const allNames=n=>[...new Set([String(n||'').trim(),...(aliasMap[n]||[])])].filter(Boolean);
+const names=n=>allNames(n).filter(isChinesePersonName);
+const uniqueUrls=x=>[...new Set(x.filter(Boolean))];
+function mergeAliases(from){rows(from).forEach(([k,v])=>{const g=[...new Set([k,...(Array.isArray(v)?v:[v])].filter(Boolean))];g.forEach(n=>aliasMap[n]=[...new Set([n,...(aliasMap[n]||[]),...g])])})}
+function wantedAvatarKeys(label){const raw=String(label||'默认').trim()||'默认';for(const[cn,keys]of Object.entries(emotionKeys))if(cn===raw||keys.includes(raw))return uniqueUrls([raw,...keys]).filter(k=>!['default','默认'].includes(k));return[raw]}
+function ensureChar(n){return idx.chars[n]||(idx.chars[n]={avatars:{},portraits:[],videos:[]})}
+function indexPath(p){const seg=String(p).split('/');if(seg[0]!=='assets'||seg.length<3)return;const type=seg[1],name=seg[2],file=seg.slice(3).join('/');if(type==='ui'){if(/\.(png|jpe?g|webp|gif|mp4)$/i.test(p))idx.ui.push({path:p,url:rawUrl(p)});return}if(!['charactor_avatar','charactor_lihui'].includes(type)||!file||!isChinesePersonName(name))return;const b=ensureChar(name),url=rawUrl(p);if(/\.mp4$/i.test(file))b.videos.push(url);else if(type==='charactor_avatar'&&/\.(png|jpe?g|webp|gif)$/i.test(file)){const m=file.match(/_avatar_(.+)\.(?:png|jpe?g|webp|gif)$/i),key=m?m[1].replace(/_\d+$/,''):'default';(b.avatars[key]||=[]).push(url)}else if(type==='charactor_lihui'&&/\.(png|jpe?g|webp|gif)$/i.test(file))b.portraits.push(url)}
+function applyAssetIndex(tree,aliases){mergeAliases(aliases);idx.chars={};idx.ui=[];(tree||[]).forEach(indexPath);const cmp=(a,b)=>a.localeCompare(b,'zh-CN',{numeric:true});Object.values(idx.chars).forEach(b=>{b.portraits.sort(cmp);b.videos.sort(cmp);Object.values(b.avatars).forEach(x=>x.sort(cmp))});idx.ready=true}
+async function fetchAssetIndex(){try{const r=await fetch(manifestUrl,{cache:'no-cache'});if(!r.ok)throw Error(`Manifest ${r.status}`);const m=await r.json();return{paths:Array.isArray(m.paths)?m.paths:[],aliases:obj(m.aliases)}}catch(e1){const r=await fetch(treeApi,{headers:{Accept:'application/vnd.github+json'}});if(!r.ok)throw Error(`GitHub ${r.status}`);const p=await r.json();return{paths:(p.tree||[]).filter(x=>x.type==='blob').map(x=>x.path),aliases:null}}}
+async function loadAssets(){
+  let cached=null;
+  try{const c=JSON.parse(hostStorage().getItem(cacheKey)||'null');if(c?.paths?.length)cached=c}catch(e){}
+  if(cached){
+    applyAssetIndex(cached.paths,cached.aliases);
+    fetchAssetIndex().then(latest=>{
+      try{hostStorage().setItem(cacheKey,JSON.stringify(latest))}catch(e){}
+      applyAssetIndex(latest.paths,latest.aliases);
+      if(S)render();
+    }).catch(()=>{});
+    return;
+  }
+  try{
+    const latest=await fetchAssetIndex();
+    try{hostStorage().setItem(cacheKey,JSON.stringify(latest))}catch(e){}
+    applyAssetIndex(latest.paths,latest.aliases);
+  }catch(e){applyAssetIndex([],null)}
+}
+const bundles=n=>names(n).map(x=>idx.chars[x]).filter(Boolean);
+function faceMood(a){
+  if(!a)return'战斗';
+  if(a.受伤||(a.hpMax&&a.hp>0&&a.hp/a.hpMax<=.28))return'受伤';
+  const raw=String(a.头像表情||'').trim();
+  return SAY_MOODS.includes(raw)?raw:'战斗';
+}
+function pickSayFace(n,mood){
+  const bag=obj(readLocalMap(SAY_KEY).faces);
+  const t=SAY_MOODS.includes(mood)?mood:'战斗';
+  const keys=allNames(n);
+  for(const k of keys){const b=bag[k];if(t!=='默认'&&b&&isFaceUrl(b[t]))return b[t]}
+  for(const k of keys){const b=bag[k];if(b&&isFaceUrl(b['默认']))return b['默认']}
+  return'';
+}
+function pickOldFace(n,mood){
+  const rec=readLocalMap(OLD_AVATAR_KEY);
+  const t=SAY_MOODS.includes(mood)?mood:'战斗';
+  for(const k of allNames(n)){
+    const b=rec[k];
+    if(!b||typeof b!=='object')continue;
+    if(t!=='默认'&&b.emotions&&isFaceUrl(b.emotions[t]))return b.emotions[t];
+    if(isFaceUrl(b.avatar))return b.avatar;
+  }
+  return'';
+}
+function avatarOnlyCandidates(n,d={}){
+  const out=[],push=u=>{if(isStill(u)&&!out.includes(u))out.push(u)};
+  const mood=d.头像表情||'战斗';
+  push(pickSayFace(n,mood));
+  push(pickOldFace(n,mood));
+  allNames(n).forEach(k=>push(getChoice(AVATAR_CHOICE_KEY,k)));
+  allNames(n).forEach(k=>getCustomList(AVATAR_CUSTOM_KEY,k).forEach(x=>push(x.url)));
+  const bs=bundles(n);
+  wantedAvatarKeys(mood).forEach(k=>bs.forEach(b=>(b.avatars[k]||[]).forEach(push)));
+  ['default','默认'].forEach(k=>bs.forEach(b=>(b.avatars[k]||[]).forEach(push)));
+  return out;
+}
+function faceWho(a){
+  if((a.stack||1)>1)return'';
+  if(a.名==='你')return String(a.颜名||'').trim();
+  return String(a.颜名||a.显示||a.名||'').trim();
+}
+function faceUrls(a){
+  const n=faceWho(a);
+  if(!n)return[];
+  const mood=faceMood(a);
+  const d={头像表情:mood,当前立绘:a.当前立绘||''};
+  const out=[],push=u=>{if(isStill(u)&&!out.includes(u))out.push(u)};
+  const bag=typeof window!=='undefined'&&window.__BT_TEST_FACES;
+  if(bag&&typeof bag==='object'){push(bag[n]);push(bag[a.名]);push(bag[a.显示]);push(bag[a.rec名])}
+  avatarOnlyCandidates(n,d).forEach(push);
+  allNames(n).forEach(k=>push(getChoice(PORTRAIT_CHOICE_KEY,k)));
+  const fixed=String(d.当前立绘||'').trim();
+  if(/^(https?:\/\/|data:image\/)/i.test(fixed))push(fixed);
+  bundles(n).forEach(b=>(b.portraits||[]).forEach(push));
+  allNames(n).forEach(k=>getCustomList(PORTRAIT_CUSTOM_KEY,k).forEach(x=>push(x.url)));
+  return out;
+}
+const facePools=new Map();
+let facePoolId=0;
+function faceHtml(a){
+  const letter=esc((a.显示||a.名||'?').slice(0,1));
+  const urls=faceUrls(a);
+  if(!urls.length)return`<div class="bt-seal">${letter}<\/div>`;
+  const id=`fc${++facePoolId}`;
+  facePools.set(id,urls);
+  return`<div class="bt-seal has-face"><b>${letter}<\/b><img src="${esc(urls[0])}" alt="" loading="lazy" data-bt-face="${id}" data-bt-face-i="0"><\/div>`;
+}
+function nextFace(img){
+  const urls=facePools.get(img?.dataset?.btFace)||[],i=num(img?.dataset?.btFaceI)+1;
+  if(!img||i>=urls.length){if(img)img.remove();return}
+  img.dataset.btFaceI=String(i);
+  img.src=urls[i];
+}
+function paintFace(a,src={}){
+  const mine=a.名==='你';
+  a.颜名=mine?String(src.姓名||src.道号||'').trim()||'主角':String(src._key||a.显示||a.名||'').trim();
+  a.头像表情=String(src.头像表情||'战斗').trim()||'战斗';
+  a.当前立绘=String(src.当前立绘||'').trim();
+  return a;
+}
+
+function looksRealm(s){
+  const raw=String(s||'').trim();
+  if(/DC\s*[:：]?\s*\d+/i.test(raw))return true;
+  const t=raw.replace(/[（(].*?[)）]/g,'').replace(/[·・\s]/g,'').trim();
+  return /^(伪|真)?(凡人|炼气|筑基|金丹|元婴|出窍|化神|炼虚|合体|渡劫|大乘)(期|[初中后]期|前期|大圆满|小圆满|圆满|巅峰|[一二三四五六七八九十两\d]+层)*(修士|散修)?$/.test(t);
+}
+function takeStack(str){
+  let t=String(str||'').trim(),n=1;
+  let m=t.match(/[×xX\*]\s*(\d+)\s*$/);
+  if(m){n=clamp(num(m[1]),1,99);t=t.slice(0,m.index).trim()}
+  m=t.match(/^(\d+)\s*[名个位]\s*/);
+  if(m){n=clamp(num(m[1]),1,99);t=t.slice(m[0].length).trim()}
+  m=t.match(/^(一群|一伙|一队|十余)\s*/);
+  if(m){n=Math.max(n,10);t=t.slice(m[0].length).trim()}
+  return{名:t||String(str||'').trim(),stack:n};
+}
+function isNobody(name){
+  const t=String(name||'').replace(/[。.\s]/g,'').trim();
+  return /^(无|没有|无有|暂无|空|无队友|没有队友|无同伴|独自|独自一人|单人|none|na)$/i.test(t);
+}
+function parseUnits(v){
+  const parts=String(v||'').split(/\s*\|\s*/).map(x=>x.trim()).filter(Boolean);
+  let realm='';
+  if(parts.length>=2){
+    const last=parts[parts.length-1];
+    if(looksRealm(last)||dcTable(last)!=null)realm=parts.pop();
+  }
+  const names=parts.flatMap(p=>p.split(/[、,，]/).map(x=>x.trim()).filter(Boolean));
+  return names.map(raw=>{
+    const st=takeStack(raw);
+    let 境界=realm,名=st.名;
+    if(!境界&&looksRealm(名))境界=名;
+    return{名,境界,stack:st.stack};
+  }).filter(u=>u.名&&!isNobody(u.名));
+}
+function stripShiNote(s){
+  return String(s||'').replace(/[（(][^）)]*[)）]/g,'').trim();
+}
+function cnInt(s){
+  const t=String(s||'').trim();
+  if(/^\d+$/.test(t))return num(t);
+  if(t==='十'||t==='满')return 10;
+  if(t==='两')return 2;
+  if(t==='半')return 5;
+  const i='一二三四五六七八九'.indexOf(t);
+  return i>=0?i+1:0;
+}
+function matchShiWord(part){
+  const t=String(part||'').replace(/\s+/g,'');
+  for(const w of SHI_WORDS_SORTED)if(t===w||t.includes(w))return w;
+  return '';
+}
+function shiDegree(raw){
+  const t=stripShiNote(raw).replace(/\s+/g,'');
+  if(!t)return{mode:'sev',ratio:.35,step:4,label:'轻'};
+  if(/将死|危殆|垂危/.test(t))return{mode:'remain',ratio:.2,label:'将死'};
+  if(/极重|通天|^极/.test(t))return{mode:'sev',ratio:.9,step:12,label:'极'};
+  if(/^重/.test(t))return{mode:'sev',ratio:.75,step:10,label:'重'};
+  if(/^[沉深颇]/.test(t))return{mode:'sev',ratio:.65,step:8,label:'沉'};
+  if(/^中/.test(t))return{mode:'sev',ratio:.5,step:6,label:'中'};
+  if(/^轻/.test(t))return{mode:'sev',ratio:.35,step:4,label:'轻'};
+  if(/^[微稍略]/.test(t))return{mode:'sev',ratio:.2,step:2,label:'微'};
+  const cheng=t.match(/^([一二三四五六七八九十两半满\d]+)成/);
+  if(cheng){
+    const n=clamp(cnInt(cheng[1])||5,.1,10);
+    return{mode:'remain',ratio:clamp(n/10,.1,1),label:cheng[0]};
+  }
+  if(looksRealm(t)||dcTable(t)!=null||/凡人/.test(t)){
+    return{mode:'anchor',dc:dcOf(t),label:t};
+  }
+  return{mode:'sev',ratio:.35,step:4,label:'轻'};
+}
+function parseShiItem(raw,defaultWho){
+  const t=stripShiNote(raw);
+  if(!t)return null;
+  const parts=t.split(/\s*[·・]\s*|\s{2,}/).map(x=>x.trim()).filter(Boolean);
+  const bits=parts.length>1?parts:t.split(/\s+/).map(x=>x.trim()).filter(Boolean);
+  let word='',wi=-1;
+  bits.forEach((p,i)=>{
+    const w=matchShiWord(p);
+    if(w&&(wi<0||w.length>word.length)){word=w;wi=i}
+  });
+  if(!word)return null;
+  const kind=SHI_KIND[word];
+  const whoRaw=wi>0?bits.slice(0,wi).join(''):'';
+  const 度=bits.slice(wi+1).join('');
+  const who=whoRaw||defaultWho||(SHI_UP_KIND.has(kind)?'你':'敌');
+  return{who,词:word,度,kind};
+}
+function parseShiLine(v,defaultWho){
+  return String(v||'').split(/\s*\|\s*/).map(x=>parseShiItem(x,defaultWho)).filter(Boolean);
+}
+function scanShiWords(text){
+  const t=String(text||'');
+  const found=[],used=new Array(t.length).fill(false);
+  for(const w of SHI_WORDS_SORTED){
+    let i=0;
+    while((i=t.indexOf(w,i))>=0){
+      if(!used.slice(i,i+w.length).some(Boolean)){
+        for(let k=0;k<w.length;k++)used[i+k]=true;
+        found.push(w);
+      }
+      i+=w.length;
+    }
+  }
+  return found;
+}
+function shiFromCause(text){
+  return scanShiWords(text).map(word=>{
+    const kind=SHI_KIND[word];
+    if(kind==='form')return null;
+    return{who:SHI_UP_KIND.has(kind)?'你':'敌',词:word,度:'',kind};
+  }).filter(Boolean);
+}
+function resolveShiWho(s,who){
+  const t=String(who||'').trim();
+  if(SHI_WHO_ME.test(t))return[s.me];
+  if(SHI_WHO_FOE.test(t))return(s.foes||[]).slice();
+  if(SHI_WHO_ALLY.test(t))return(s.allies||[]).slice();
+  const all=[s.me,...(s.foes||[]),...(s.allies||[])];
+  return all.filter(a=>{
+    const n=String(a.显示||a.名||'').replace(/[×xX]\d+$/,'');
+    const rec=String(a.rec名||'');
+    return n===t||rec===t||(n&&(n.endsWith(t)||t.endsWith(n)));
+  });
+}
+function shiFightDc(base,kind,deg){
+  const up=SHI_UP_KIND.has(kind);
+  if(deg.mode==='anchor'){
+    if(up)return Math.max(base,deg.dc);
+    return clamp(deg.dc,0,base);
+  }
+  if(up){
+    const add=deg.step!=null?deg.step:Math.round(12*(deg.ratio||.35));
+    return Math.max(base,base+add);
+  }
+  if(kind==='wound'&& deg.mode==='sev')return clamp(Math.round(base*(1-deg.ratio*.5)),0,base);
+  if(kind==='spirit')return clamp(base-6,0,base);
+  if(kind==='fate')return clamp(base-8,0,base);
+  if(deg.mode==='remain')return clamp(Math.round(base*deg.ratio),0,base);
+  return clamp(Math.round(base*(1-deg.ratio)),0,base);
+}
+function applyShiExtras(a,kind,base,next){
+  const gap=next-base;
+  if(kind==='up'||kind==='form'){
+    if(gap>=8)a.atkMul=(a.atkMul||1)*1.08;
+    if(kind==='form')a.格挡=(a.格挡||0)+Math.round(6+base/10);
+  }else if(kind==='burst'){
+    a.atkMul=(a.atkMul||1)*1.15;
+    a.格挡=(a.格挡||0)+Math.round(8+base/8);
+  }else if(kind==='borrow'){
+    a.atkMul=(a.atkMul||1)*1.1;
+    a.sp=Math.min(a.spMax,Math.round(a.sp*1.15));
+  }else if(kind==='backlash')addSlow(a,2);
+  else if(kind==='tired')a.mp=Math.round(a.mp*.6);
+  else if(kind==='seal')a.封灵=true;
+  else if(kind==='poison'){a.灼烧=(a.灼烧||0)+1;addSlow(a,1)}
+  else if(kind==='open'){a.减势=true;a.格挡=0}
+  else if(kind==='daze')addSlow(a,2);
+  else if(kind==='spirit')a.sp=Math.round(a.sp*.55);
+  else if(kind==='wound')addSlow(a,1);
+  else if(kind==='fate'){a.atkMul=(a.atkMul||1)*.85;a.减势=true}
+}
+function retuneIntents(a){
+  (a.intents||[]).forEach(it=>{
+    if(it.名==='攻')it.基=Math.round(8+a.dc/12);
+    else if(it.名==='守')it.基=Math.round(5+a.dc/20);
+    else if(it.名==='扰')it.基=Math.round(3+a.dc/20);
+    else if(it.kit&&it.型==='atk')it.基=Math.round((it.kit==='器物'?9:7)+a.dc/12);
+    else if(it.kit&&it.型==='def')it.基=Math.round(6+a.dc/18);
+    else if(it.kit&&it.型==='heal')it.基=Math.round(6+a.dc/16);
+  });
+}
+function applyShi(s,items){
+  const bits=[];
+  (items||[]).slice(0,6).forEach(item=>{
+    const targets=resolveShiWho(s,item.who);
+    if(!targets.length)return;
+    const deg=shiDegree(item.度);
+    const tag=item.词+(deg.label?`·${deg.label}`:'');
+    targets.forEach(a=>{
+      const base=a.基dc!=null?a.基dc:a.dc;
+      a.基dc=base;
+      const next=shiFightDc(base,item.kind,deg);
+      a.dc=next;
+      a.势标=a.势标?`${a.势标}·${tag}`:tag;
+      applyShiExtras(a,item.kind,base,next);
+      retuneIntents(a);
+      bits.push(`${whoName(s,a)} ${tag}（态势DC${next}）`);
+    });
+  });
+  if(s.me)s.me.每回合=pools(s.me.dc).每回合灵力;
+  return bits;
+}
+function hit(s,from,to,raw,opt={}){
+  const out={dmg:0,blocked:0,miss:false,reflect:0,raw,cleared:0,破防:!!opt.破防,穿透:!!opt.穿透};
+  if(to.闪避&&!opt.穿透&&!from.逼角&&!to.逼角){
+    to.闪避=false;
+    if(hasRoot(to,'风'))to.闪后抽=true;
+    fxFloat(to,'闪','miss');
+    fxFlash('cast');
+    out.miss=true;return out;
+  }
+  if(opt.破防&&to.格挡>0){out.cleared=to.格挡;to.格挡=0}
+  let dmg=raw,blocked=0;
+  if(!opt.穿透){blocked=Math.min(to.格挡||0,dmg);to.格挡-=blocked;dmg-=blocked}
+  to.hp-=dmg;
+  if(dmg>0)to.受伤=true;
+  if(blocked)fxFloat(to,'-'+blocked,'block');
+  if(dmg){
+    fxFloat(to,'-'+dmg,'dmg');
+    fxShake(to);
+    fxImpact(to);
+    if(S&&to===S.me)fxFlash('hurt');
+    else if(dmg>=18)fxFlash('hit');
+  }
+  if(to.反伤&&dmg>0){
+    out.reflect=Math.round(dmg*.5);
+    from.hp-=out.reflect;
+    fxFloat(from,'-'+out.reflect,'dmg');
+    fxShake(from);
+  }
+  out.dmg=dmg;out.blocked=blocked;return out;
+}
+function hitSoul(s,to,raw){
+  const took=Math.min(to.sp,raw);to.sp-=took;
+  const over=raw-took;if(over>0){to.hp-=over;to.受伤=true}
+  if(took)fxFloat(to,'识-'+took,'soul');
+  if(over){fxFloat(to,'-'+over,'dmg');fxShake(to)}
+  return{took,over};
+}
+function woundText(to,r,from){
+  if(!r||r.miss)return`${nm(to)} 闪开`;
+  const bits=[];
+  if(r.破防&&r.cleared)bits.push(`破防清盾${r.cleared}`);
+  else if(r.穿透)bits.push('穿透');
+  if(r.blocked)bits.push(`盾-${r.blocked}`);
+  if(r.dmg)bits.push(`血-${r.dmg}`);
+  if(!r.blocked&&!r.dmg)bits.push('未伤');
+  if(to.格挡>0)bits.push(`余盾${to.格挡}`);
+  bits.push(`余血${Math.max(0,Math.round(to.hp))}`);
+  if(to.hp<=0)bits.push('倒下');
+  if(r.reflect)bits.push(`反伤${nm(from)}血-${r.reflect}`);
+  return`${nm(to)} ${bits.join(' ')}`;
+}
+function soulText(to,r){
+  const bits=[`${nm(to)} 神识-${r.took}（余${Math.max(0,Math.round(to.sp))}）`];
+  if(r.over)bits.push(`血-${r.over} 余血${Math.max(0,Math.round(to.hp))}`);
+  if(to.hp<=0)bits.push('倒下');
+  return bits.join(' ');
+}
+function foldHits(list){
+  return list.reduce((a,r)=>({
+    dmg:a.dmg+r.dmg,blocked:a.blocked+r.blocked,miss:a.miss&&r.miss,
+    reflect:a.reflect+(r.reflect||0),raw:a.raw+r.raw,cleared:a.cleared+(r.cleared||0),
+    破防:a.破防||r.破防,穿透:a.穿透||r.穿透,segs:a.segs+1
+  }),{dmg:0,blocked:0,miss:true,reflect:0,raw:0,cleared:0,破防:false,穿透:false,segs:0});
+}
+function log(s,who,text){s.log.push({who,t:`T${s.turn} ${text}`});if(s.log.length>120)s.log.shift()}
+
+function draw(s,who,n){
+  let got=0;
+  for(let i=0;i<n;i++){
+    if(!s.deck.length){s.deck=shuffle(s.discard,s.seed+s.turn*131+i);s.discard=[]}
+    const c=s.deck.pop();if(!c)break;s.hand.push(c);got++;
+  }
+  return got;
+}
+function drawPlus(s,who,n){
+  let want=n;
+  if(hasRoot(who,'水'))want=Math.min(2,n+1);
+  return draw(s,who,want);
+}
+
+function startTurn(s){
+  if(!s.me.护盾)s.me.格挡=0;
+  s.me.护盾=false;s.me.pressed=false;s.me.meleed=false;s.me.反伤=false;s.me.受伤=false;
+  (s.foes||[s.foe]).forEach(f=>{if(f)f.受伤=false});
+  (s.allies||[]).forEach(a=>{
+    if(!a.护盾)a.格挡=0;a.护盾=false;a.受伤=false;
+    if(a.冰封>0)a.冰封--;
+  });
+  syncAim(s);
+  if(s.me.hp<=0){
+    s.me.费=0;s.me.锁牌=true;s.me.pressed=true;s.me.meleed=true;
+    if(s.me.冰封>0)s.me.冰封--;
+    if(s.me.滞涩>0)s.me.滞涩--;
+    log(s,'sys','你已倒下，队友继续。点结束回合。');
+    return;
+  }
+  const tax抽=Math.min(s.me.滞涩,3),tax费=Math.min(Math.floor(s.me.滞涩/2),2);
+  s.me.费=Math.max(0,s.me.每回合-tax费-(s.me.冰封?1:0));
+  if(s.me.冰封>0)s.me.冰封--;
+  s.me.增伤=0;s.me.减费=0;
+  let n=Math.max(1,(s.me.dc>=88?6:5)-tax抽);
+  if(s.me.闪后抽){n++;s.me.闪后抽=false}
+  const got=draw(s,s.me,n);
+  if(s.me.滞涩>0)s.me.滞涩--;
+  log(s,'sys',`回合开始 抽${got} 灵力${s.me.费}/${s.me.每回合} 池${Math.max(0,Math.round(s.me.mp))}/${s.me.mpMax} 滞涩${s.me.滞涩}${s.me.冰封?` 冰封${s.me.冰封}`:''}`);
+}
+function tickBurn(s,who){
+  if(!who||who.hp<=0)return;
+  if(who.灼烧>0){
+    const per=Math.max(1,Math.round(4*(hasRoot(s.me,'火')&&who!==s.me?1.15:1)));
+    const d=who.灼烧*per;who.hp-=d;who.受伤=true;
+    fxFloat(who,'-'+d,'dmg');
+    log(s,'sys',`${who.名} 灼烧 血-${d} 余血${Math.max(0,who.hp)} 余层${who.灼烧-1}`);who.灼烧--;
+  }
+}
+function woodTick(s){
+  if(s.me.hp<=0||!hasRoot(s.me,'木'))return;
+  const h=Math.max(1,Math.round(s.me.hpMax*.02));
+  s.me.hp=Math.min(s.me.hpMax,s.me.hp+h);
+  fxHeal('me',h);
+  log(s,'sys',`你 春荣余韵 → 你 生命+${h} 余血${Math.max(0,s.me.hp)}/${s.me.hpMax}`);
+}
+function over(s){
+  syncAim(s);
+  if(!livingFoes(s).length){s.done='胜';return true}
+  if(!livingParty(s).length){s.done='负';return true}
+  return false;
+}
+function npcSide(s,a){return a===s.me||(s.allies||[]).includes(a)?'ally':'foe'}
+function foesOf(s,a){return npcSide(s,a)==='ally'?livingFoes(s):livingParty(s)}
+function palsOf(s,a){return npcSide(s,a)==='ally'?livingParty(s):livingFoes(s)}
+function mostHurt(list,except){
+  const xs=(list||[]).filter(x=>x&&x.hp>0&&x!==except);
+  if(!xs.length)return null;
+  return xs.reduce((a,b)=>a.hp/a.hpMax<=b.hp/b.hpMax?a:b);
+}
+function npcRoll(s,a,k,salt){return rnd(s.seed+s.turn*131+(a.名||'').length*17+k*41+(salt||0))}
+function allyActCount(s,a){
+  let n=a.dc>=49?2:1;
+  if(livingFoes(s).length>=3)n++;
+  return clamp(n,1,3);
+}
+function atkBase(a,向){
+  let b=8+a.dc/12;
+  if(向==='cleave')b*=.72;
+  if(向==='allFoe')b*=.42;
+  return Math.max(1,Math.round(b));
+}
+function pickFoe(s,a,list,k){
+  if(!list||!list.length)return null;
+  if(list.length===1)return list[0];
+  if(list.includes(s.me)&&s.me.hp>0&&npcRoll(s,a,k,9)<.55)return s.me;
+  return mostHurt(list);
+}
+function pressTargets(a,foes){return(foes||[]).filter(f=>f&&f.hp>0&&pressDc(a)>pressDc(f))}
+function pickPress(s,a,list,k){
+  if(!list||!list.length)return null;
+  if(list.length===1)return list[0];
+  if(list.includes(s.me)&&s.me.hp>0){
+    if(pressDc(a)-pressDc(s.me)>=12)return s.me;
+    if(npcRoll(s,a,k,9)<.7)return s.me;
+  }
+  return mostHurt(list);
+}
+function hasWord(actor,w){return(actor.intents||[]).some(it=>it.词===w||it.名===w)}
+function decideAct(s,a,k,skip){
+  if(a.封灵){skip.press=true;skip.spec=true}
+  const foes=foesOf(s,a),pals=palsOf(s,a);
+  const others=pals.filter(x=>x!==a);
+  const hurt=pals.filter(x=>x.hp<x.hpMax*.55);
+  const dying=pals.filter(x=>x.hp<x.hpMax*.32);
+  const healer=hasWord(a,'回血');
+  const healBase=Math.round((6+a.dc/16)*(healer?1.45:1));
+  const vsYou=npcSide(s,a)==='foe'&&s.me&&s.me.hp>0;
+  const gapYou=vsYou?pressDc(a)-pressDc(s.me):-999;
+  const crushYou=gapYou>=12;
+  const canPressList=pressTargets(a,foes);
+  const canPress=canPressList.length>0;
+  const heal名=((a.intents||[]).find(it=>it.kit&&it.型==='heal')||{}).名||styleName(s.体裁,'援');
+  if(foes.length&&dying.length&&!skip.heal){
+    return{名:heal名,型:'heal',向:'friend',基:healBase,target:mostHurt(dying)};
+  }
+  if(foes.length&&hurt.length&&!skip.heal&&(healer||npcRoll(s,a,k,1)<.42)){
+    return{名:heal名,型:'heal',向:'friend',基:healBase,target:mostHurt(hurt)};
+  }
+  if(canPress&&!skip.press&&crushYou){
+    return{名:styleName(s.体裁,'威压'),型:'press',向:'foe',target:s.me};
+  }
+  if(others.length&&!skip.def&&others.some(x=>!(x.格挡>0)&&x.hp<x.hpMax*.7)&&npcRoll(s,a,k,2)<.38){
+    const need=others.filter(x=>!(x.格挡>0));
+    return{名:styleName(s.体裁,'护'),型:'def',向:'friend',基:Math.round(5+a.dc/20),target:mostHurt(need.length?need:others)};
+  }
+  if(!skip.def&&a.hp<a.hpMax*.38&&!crushYou){
+    const def名=((a.intents||[]).find(it=>it.kit&&it.型==='def')||{}).名||'守';
+    return{名:def名,型:'def',向:'self',基:Math.round(5+a.dc/20),target:a};
+  }
+  if(foes.length>=3&&!skip.aoe&&npcRoll(s,a,k,3)<.5){
+    return{名:styleName(s.体裁,'破阵'),型:'atk',向:'allFoe',基:atkBase(a,'allFoe'),target:pickFoe(s,a,foes,k)};
+  }
+  if(foes.length>=2&&!skip.cleave&&npcRoll(s,a,k,4)<.48){
+    return{名:styleName(s.体裁,'扫'),型:'atk',向:'cleave',基:atkBase(a,'cleave'),target:pickFoe(s,a,foes,k)};
+  }
+  if(canPress&&!skip.press&&canPressList.length>=2&&npcRoll(s,a,k,5)<.4){
+    return{名:styleName(s.体裁,'群压'),型:'press',向:'allFoe',target:canPressList[0]};
+  }
+  if(canPress&&!skip.press&&npcRoll(s,a,k,6)<(gapYou>=0?0.55:0.35)){
+    return{名:styleName(s.体裁,'威压'),型:'press',向:'foe',target:pickPress(s,a,canPressList,k)};
+  }
+  const specs=(a.intents||[]).filter(it=>it.型==='special'&&it.词!=='回血');
+  if(specs.length&&!skip.spec&&foes.length){
+    const spec=specs[Math.floor(npcRoll(s,a,k,11)*specs.length)%specs.length];
+    if(spec&&!(spec.词==='摄魂'&&crushYou)&&npcRoll(s,a,k,7)<.28){
+      return{名:spec.名,型:'special',向:'foe',词:spec.词,target:pickFoe(s,a,foes,k)};
+    }
+  }
+  const namedAtk=(a.intents||[]).filter(it=>it.kit&&it.型==='atk');
+  if(namedAtk.length&&npcRoll(s,a,k,8)<.45){
+    const c=namedAtk[Math.floor(npcRoll(s,a,k,12)*namedAtk.length)%namedAtk.length];
+    const words=c.词表||(c.词?[c.词]:[]);
+    const 向=has(words,'溅射')?'cleave':'foe';
+    return{名:c.名,型:'atk',向,基:c.基||atkBase(a,向),词:c.词,词表:c.词表,target:pickFoe(s,a,foes,k)};
+  }
+  return{名:styleName(s.体裁,'攻'),型:'atk',向:'foe',基:atkBase(a,'foe'),target:pickFoe(s,a,foes,k)};
+}
+function planActs(s,a,n){
+  n=n||(npcSide(s,a)==='ally'?allyActCount(s,a):foeActCount(s,a));
+  const skip={},out=[];
+  for(let k=0;k<n;k++){
+    const act=decideAct(s,a,k,skip);
+    out.push(act);
+    if(act.型==='def')skip.def=true;
+    if(act.型==='heal')skip.heal=true;
+    if(act.向==='allFoe'&&act.型==='atk')skip.aoe=true;
+    if(act.向==='cleave')skip.cleave=true;
+    if(act.型==='press')skip.press=true;
+    if(act.型==='special')skip.spec=true;
+  }
+  return out;
+}
+function retarget(s,a,act){
+  if(act.向==='self')return a;
+  if(act.向==='friend'){
+    if(act.target&&act.target.hp>0)return act.target;
+    return mostHurt(palsOf(s,a));
+  }
+  if(act.target&&act.target.hp>0)return act.target;
+  return foesOf(s,a)[0]||null;
+}
+function npcDmg(s,a,t,基,opt={}){
+  let raw=基*powMul(a.dc)*gapMul(a.dc,t.dc)*(a.atkMul||1);
+  if(opt.weaken)raw*=.6;
+  if(a.冰封)raw*=.75;
+  if(opt.punish)raw*=1.5;
+  if((opt.k||0)>=2&&a.dc-(s.me.dc||0)<12)raw*=.85;
+  return Math.max(1,Math.round(raw));
+}
+
+function intentTable(name,dc,rec,style){
+  const extra=splitWords(rec&&rec.神通).slice(0,2).map(w=>({名:w,型:'special',词:w,说:`附带${w}`}));
+  const art=kitIntent(parseKit(rec&&rec.功法),dc,'功法');
+  const gear=kitIntent(parseKit(rec&&rec.器物),dc,'器物');
+  const kits=[art,gear].filter(Boolean);
+  return[{名:styleName(style,'攻'),型:'atk',基:Math.round(8+dc/12),说:'直击'},
+    {名:styleName(style,'守'),型:'def',基:Math.round(5+dc/20),说:'凝罡'},
+    {名:styleName(style,'威压'),型:'press',说:'按境界 DC 差压神识'},
+    ...extra,
+    ...kits,
+    {名:styleName(style,'扰'),型:'atk',基:Math.round(3+dc/20),词:'滞涩',说:'伤害并附滞涩'}];
+}
+function realmOf(dc){
+  if(dc>=173)return'渡劫';if(dc>=148)return'大乘';if(dc>=133)return'合体';
+  if(dc>=118)return'炼虚';if(dc>=103)return'化神';if(dc>=88)return'出窍';
+  if(dc>=73)return'元婴';if(dc>=49)return'金丹';if(dc>=25)return'筑基';
+  if(dc>=1)return'炼气';return'凡人';
+}
+function foeActCount(s,foe){
+  const f=foe||s.foe;
+  const d=f.dc-s.me.dc;
+  let n=2+Math.floor(Math.max(0,f.dc-20)/22);
+  if(d>=30)n+=2;
+  else if(d>=15)n++;
+  else if(Math.abs(d)<15)n++;
+  n=clamp(n,2,8);
+  if((f.stack||1)>1){
+    const extra=Math.min(2,Math.floor((f.stack-1)/8));
+    n=clamp(n+Math.round(extra*stackDamp(f.dc,s.me.dc)),1,8);
+  }
+  const pack=livingFoes(s).length;
+  if(pack<=1)return n;
+  return clamp(Math.max(1,Math.round(n/pack+.2)),1,4);
+}
+function whoName(s,a){return a===s.me?'你':(a&&(a.显示||a.名)||'?')}
+function shortWho(s,t){
+  if(!t)return'';
+  if(t===s.me)return'你';
+  return String(t.显示||t.名||'').replace(/×\d+$/,'').slice(0,2);
+}
+function actLabel(s,act){
+  const who=act.向==='allFoe'?'全体':act.向==='self'?'自己':act.向==='cleave'?`${shortWho(s,act.target)}+`:shortWho(s,act.target);
+  return who?`${act.名} ${who}`:act.名;
+}
+function applyAct(s,a,act,opt={}){
+  if(!a||a.hp<=0||s.done)return;
+  const side=npcSide(s,a)==='ally'?'ally':'foe';
+  if((opt.hide||a.隐匿)&&act.型==='atk'){log(s,side,`${a.名} 收势不发`);return}
+  const t=retarget(s,a,act);
+  const you=x=>whoName(s,x);
+  if(act.型==='heal'){
+    if(!t)return;
+    const h=Math.max(1,Math.round(act.基*powMul(a.dc)));
+    t.hp=Math.min(t.hpMax,t.hp+h);
+    fxHeal(t,h);
+    log(s,side,`${a.名} ${act.名} → ${you(t)} 生命+${h} 余血${Math.max(0,Math.round(t.hp))}/${t.hpMax}`);
+    return;
+  }
+  if(act.型==='def'){
+    if(!t)return;
+    const blk=Math.round(act.基*powMul(a.dc));
+    t.格挡=(t.格挡||0)+blk;
+    if(t!==a)t.护盾=true;
+    fxFloat(t,'+'+blk,'block');
+    log(s,side,`${a.名} ${act.名} → ${you(t)} 格挡+${blk}（现${t.格挡}）`);
+    return;
+  }
+  if(act.型==='press'){
+    if(act.向==='allFoe'){
+      const bits=foesOf(s,a).map(v=>{
+        if(s.done||over(s))return'';
+        return a.dc<v.dc?`${you(v)} 压不住`:`${you(v)} ${press(s,a,v)}`;
+      }).filter(Boolean);
+      log(s,side,`${a.名} ${act.名} → ${bits.join('；')}`);
+      return;
+    }
+    if(!t)return;
+    log(s,side,`${a.名} ${act.名} → ${you(t)} ${press(s,a,t)}`);
+    return;
+  }
+  if(act.型==='special'){
+    if(!t)return;
+    const w=act.词;
+    if(w==='回血'){
+      const pal=mostHurt(palsOf(s,a))||a;
+      const h=Math.max(1,Math.round((6+a.dc/16)*powMul(a.dc)*1.4));
+      pal.hp=Math.min(pal.hpMax,pal.hp+h);
+      fxHeal(pal,h);
+      log(s,side,`${a.名} 回血 → ${you(pal)} 生命+${h} 余血${Math.max(0,Math.round(pal.hp))}`);
+      return;
+    }
+    if(w==='灼烧'){t.灼烧=(t.灼烧||0)+2;log(s,side,`${a.名} ${act.名} → ${you(t)} 灼烧+2（现${t.灼烧}层）`);return}
+    if(w==='滞涩'){addSlow(t,1);log(s,side,`${a.名} ${act.名} → ${you(t)} 滞涩+1（现${t.滞涩}）`);return}
+    if(w==='摄魂'){const soul=hitSoul(s,t,14);log(s,side,`${a.名} ${act.名} → ${soulText(t,soul)}`);return}
+    if(w==='闪避'){a.闪避=true;log(s,side,`${a.名} ${act.名} → 闪避就绪`);return}
+    if(w==='隐匿'){a.隐匿=true;log(s,side,`${a.名} ${act.名} → 收势隐匿`);return}
+    addSlow(t,1);
+    log(s,side,`${a.名} ${act.名} → ${you(t)}${w?' 附'+w:' 滞涩+1'}`);
+    return;
+  }
+  if(!t||t.hp<=0)return;
+  if(act.向==='allFoe'){
+    const bits=foesOf(s,a).map(v=>woundText(v,hit(s,a,v,npcDmg(s,a,v,act.基,opt)),a));
+    log(s,side,`${a.名} ${act.名} → ${bits.join('；')}`);
+    return;
+  }
+  const words=act.词表||(act.词?[act.词]:[]);
+  const d=hit(s,a,t,npcDmg(s,a,t,act.基,opt),{穿透:has(words,'穿透'),破防:has(words,'破防')});
+  let extra='';
+  if(act.词==='滞涩'&&!has(words,'滞涩')){addSlow(t,1);extra=' 滞涩+1'}
+  if(words.length)extra+=applyWords(s,a,t,words,d.dmg,null);
+  if(opt.punish)extra+=' 遁失败加伤';
+  if(opt.weaken)extra+=' 减势';
+  if(act.向==='cleave'||has(words,'溅射')){
+    if(d.dmg>0){
+      const splash=Math.max(1,Math.round(d.dmg*.35));
+      const others=foesOf(s,a).filter(x=>x!==t);
+      if(others.length)extra+=' 溅射'+others.map(x=>woundText(x,hit(s,a,x,splash,{穿透:true}),a)).join('、');
+    }else extra+=' 未破盾无溅射';
+  }
+  log(s,side,`${a.名} ${act.名} → ${woundText(t,d,a)}${extra}`);
+}
+function foeMayFlee(s,foe){
+  const f=foe||s.foe;
+  if(livingFoes(s).length>1)return false;
+  if(f.dc>s.me.dc)return false;
+  const floor=(f.dc+8>=s.me.dc)?0.12:0.18;
+  if(f.hp>f.hpMax*floor)return false;
+  const rate=clamp(35+(s.me.dc-f.dc)*1.5,10,80);
+  const roll=Math.floor(rnd(s.seed+s.turn*613)*100);
+  if(roll<rate){
+    log(s,'foe',`${f.名} ${styleName(s.体裁,'遁')}（${Math.round(rate)}% 掷${roll}）`);
+    s.done='敌逃';return true;
+  }
+  return false;
+}
+function foeTurnOne(s,foe,punish){
+  if(foe.hp<=0)return;
+  if(foeMayFlee(s,foe))return;
+  if(!foe.护盾)foe.格挡=0;
+  foe.护盾=false;
+  const n=foeActCount(s,foe);
+  const acts=planActs(s,foe,n);
+  log(s,'sys',`${foe.名} 出手 ×${n}`);
+  acts.forEach((act,k)=>{
+    if(s.done||over(s))return;
+    applyAct(s,foe,act,{punish:!!(punish&&k===0),weaken:!!foe.减势,hide:!!foe.隐匿,k});
+  });
+  foe.减势=false;foe.隐匿=false;foe.封灵=false;
+  if(foe.冰封>0)foe.冰封--;
+}
+function foeTurn(s,punish){
+  livingFoes(s).forEach((f,i)=>{if(!s.done)foeTurnOne(s,f,!!(punish&&i===0))});
+  syncAim(s);
+}
+function allyTurn(s){
+  (s.allies||[]).filter(a=>a.hp>0).forEach(ally=>{
+    if(s.done||!livingFoes(s).length)return;
+    if(!ally.护盾)ally.格挡=0;
+    ally.护盾=false;
+    const n=allyActCount(s,ally);
+    const acts=planActs(s,ally,n);
+    log(s,'sys',`${ally.名} 出手 ×${n}`);
+    acts.forEach((act,k)=>{
+      if(s.done||over(s))return;
+      applyAct(s,ally,act,{k});
+    });
+  });
+}
+function press(s,from,to){
+  const d=pressDc(from)-pressDc(to);
+  const extra=hasRoot(from,'雷')&&d>0?1:0;
+  if(d>0){
+    const dmg=Math.min(50,Math.max(8,Math.round(d*1.5))),sl=Math.min(5,Math.max(1,Math.floor(d/4)))+extra;
+    const r=hitSoul(s,to,dmg);addSlow(to,sl);
+    const routed=applyPeel(to,crushStack(from,to));
+    return`Δ${d} 神识-${r.took}（余${Math.max(0,Math.round(to.sp))}）${r.over?` 血-${r.over} 余血${Math.max(0,Math.round(to.hp))}`:''} 滞涩+${sl}${routed}`;
+  }
+  if(d===0){const r=hitSoul(s,to,12);addSlow(from,1);addSlow(to,1);return`Δ0 对峙 ${soulText(to,r)} 各滞涩+1`}
+  const dmg=Math.min(50,Math.max(8,Math.round(-d*1.5))),sl=Math.min(5,Math.max(1,Math.floor(-d/4)));
+  const r=hitSoul(s,from,dmg);addSlow(from,sl);
+  return`Δ${d} 反噬 ${soulText(from,r)} 滞涩+${sl}`;
+}
+function crushStack(from,to){
+  const n=to.stack||1;
+  if(n<=1)return 0;
+  const d=pressDc(from)-pressDc(to);
+  if(d<=0)return 0;
+  const ratio=clamp((d-4)/36,.18,.88);
+  return Math.max(1,Math.min(n-1,Math.ceil(n*ratio)));
+}
+function applyPeel(to,peel){
+  if(!peel||(to.stack||1)<=1)return'';
+  const old=to.stack,vs=to.vsDc??0;
+  to.stack=Math.max(1,old-peel);
+  const next=stackHpMul(to.stack,to.dc,vs),prev=stackHpMul(old,to.dc,vs);
+  const base=to.基hpMax||Math.round(to.hpMax/Math.max(prev,1e-6));
+  to.基hpMax=base;
+  to.hpMax=Math.max(1,Math.round(base*next));
+  to.hp=Math.min(to.hpMax,Math.max(0,Math.round(to.hp*(prev>0?next/prev:1))));
+  to.atkMul=stackAtkMul(to.stack,to.dc,vs);
+  renameStack(to);
+  return` 溃散${peel}人 余${to.stack>1?`×${to.stack}`:'单人'} 余血${Math.max(0,Math.round(to.hp))}`;
+}
+
+function applyWords(s,from,to,w,total,card){
+  let ex='';
+  if(has(w,'吸灵')){const g=Math.round(total*.3);from.mp=Math.min(from.mpMax,from.mp+g);ex+=` 吸灵+${g}`}
+  if(has(w,'麻痹')){to.减势=true;ex+=' 麻痹';if(hasRoot(from,'雷')){addSlow(to,1);ex+=' 滞涩+1'}}
+  if(has(w,'灼烧')){to.灼烧=(to.灼烧||0)+1;ex+=' 灼烧'}
+  if(has(w,'冰封')){to.冰封=Math.max(to.冰封||0,card&&card.id==='root:冰'?2:1);ex+=' 冰封';
+    if(hasRoot(from,'冰')){addSlow(to,1);ex+=' 滞涩+1'}}
+  if(has(w,'滞涩')){addSlow(to,1);ex+=' 滞涩+1'}
+  if(has(w,'摄魂')){const r=hitSoul(s,to,12);ex+=` ${soulText(to,r)}`}
+  if(has(w,'回气')){const n=TIER[card&&card.品]>=1.3?2:1;from.费+=n;ex+=` 灵力+${n}`}
+  if(has(w,'减费')){from.减费=1;ex+=' 减费'}
+  if(has(w,'反伤')){from.反伤=true;ex+=' 反伤'}
+  if(has(w,'隐匿')){to.隐匿=true;ex+=' 隐匿'}
+  if(has(w,'封灵')){to.封灵=true;ex+=' 封灵'}
+  if(has(w,'驱散')){
+    if(to.格挡>0){to.格挡=0;ex+=' 驱散格挡'}
+    else if(to.闪避){to.闪避=false;ex+=' 驱散闪避'}
+    else if(from.滞涩>0){from.滞涩--;ex+=' 清滞涩'}
+    else if(from.灼烧>0){from.灼烧=0;ex+=' 清灼烧'}
+    else if(from.冰封>0){from.冰封=0;ex+=' 清冰封'}
+  }
+  if(from.雷雨麻&&card&&card.类==='atk'){to.减势=true;from.雷雨麻=false;ex+=' 雷雨麻痹'}
+  return ex;
+}
+
+function needAlive(s){
+  if(s.me.hp<=0){toast('你已倒下');return false}
+  return true;
+}
+function lockIfDown(s){
+  if(s.me.hp<=0){s.me.锁牌=true;s.me.pressed=true;s.me.meleed=true;s.me.费=0}
+}
+function playCard(idx){
+  const s=S;if(!s||s.done||busy||!needAlive(s))return;syncFoe(s);
+  const c=s.hand[idx];if(!c)return;
+  const aim=cardAim(c);
+  let foe=null,friend=s.me;
+  if(aim==='foe'||aim==='cleave'){
+    foe=needFoe(s);
+    if(!foe)return toast('先点一个敌人');
+  }
+  if(aim==='allFoe'&&!livingFoes(s).length)return toast('没有敌人');
+  if(aim==='friend')friend=needFriend(s);
+  const blood=c.血比?Math.max(1,Math.round(s.me.blMax*c.血比)):(c.血||0);
+  const fee=Math.max(0,(c.费||0)-(s.me.减费||0));
+  if(s.me.费<fee)return toast('灵力不够');
+  if(c.识&&s.me.sp<c.识)return toast('神识不够');
+  if(blood&&s.me.bl<blood)return toast('精血不够');
+  if(c.类==='atk'&&s.me.滞涩>=5)return toast('滞涩过深，出不了攻牌');
+
+  fxFlyCard(qs(`[data-play="${idx}"]`),c.类);
+  fxCast(c.名,c.类);
+  fxFlash(c.类==='atk'?'hit':c.类==='def'?'guard':'cast');
+  s.me.费-=fee;if(!c.白)s.me.mp=Math.max(0,s.me.mp-fee);s.me.减费=0;
+  if(c.识)s.me.sp-=c.识;if(blood)s.me.bl-=blood;
+  s.hand.splice(idx,1);s.discard.push(c);
+  const w=c.词||[];
+
+  if(c.id==='juling'){s.me.费+=2;log(s,'me',`你 聚灵 → 你 本回合灵力+2（现${s.me.费}）`)}
+  else if(c.id==='guiyuan'){if(s.me.滞涩>0)s.me.滞涩--;const d=drawPlus(s,s.me,1);
+    let extra='';if(hasRoot(s.me,'木')){s.me.hp=Math.min(s.me.hpMax,s.me.hp+4);fxHeal(s.me,4);extra=` 你生命+4 余血${s.me.hp}`}
+    log(s,'me',`你 归元 → 你 滞涩${s.me.滞涩} 抽${d}${extra}`)}
+  else if(c.id==='sheshu'){foe.减势=true;log(s,'me',`你 摄物 → ${foe.名} 下回合意图伤害-40%`)}
+  else if(c.id==='shenzhao'){
+    s.me.看穿=c.看穿||2;
+    livingFoes(s).forEach(f=>f.隐匿=false);
+    log(s,'me',`你 神照 → ${livingFoes(s).map(nm).join('、')} 破隐匿，看穿后${s.me.看穿}回合`)}
+  else if(c.类==='atk'&&c.基){
+    fxSlash(foe);
+    const segs=has(w,'多段')?2:1;
+    const opt={穿透:has(w,'穿透'),破防:has(w,'破防')};
+    const spread=wantSpread(s,c);
+    const mainMul=spread?0.7:1;
+    const parts=[];
+    for(let i=0;i<segs;i++){
+      parts.push(hit(s,s.me,foe,Math.max(1,Math.round(cardDmg(s,c,s.me,foe)*mainMul)),opt));
+    }
+    const tot=foldHits(parts);
+    if(c.耗){s.wear[c.耗]=(s.wear[c.耗]||0)+2;c.损=num(c.损)+2}
+    let ex=applyWords(s,s.me,foe,w,tot.dmg,c);
+    if(has(w,'追击')&&foe.受伤)ex+=' 追击×1.4';
+    if(has(w,'溅射')){
+      if(tot.dmg>0){
+        const splash=Math.max(1,Math.round(tot.dmg*.35));
+        const others=livingFoes(s).filter(f=>f!==foe);
+        const hits=others.length?others:[foe];
+        const bits=hits.map(t=>woundText(t,hit(s,s.me,t,splash,{穿透:true}),s.me));
+        ex+=` 溅射${bits.join('、')}`;
+      }else ex+=' 未破盾无溅射';
+    }else if(spread){
+      const bits=livingFoes(s).filter(f=>f!==foe).map(t=>{
+        const more=[];
+        for(let i=0;i<segs;i++)more.push(hit(s,s.me,t,Math.max(1,Math.round(cardDmg(s,c,s.me,t)*.4)),opt));
+        return woundText(t,foldHits(more),s.me);
+      });
+      if(bits.length)ex+=` 群攻${bits.join('、')}`;
+    }
+    if(c.耗)ex+=` ${c.耗}损耗+2`;
+    log(s,'me',`你 ${c.名} → ${woundText(foe,tot,s.me)}${segs>1?' 两段':''}${ex}`);
+  }else if(c.类==='def'){
+    if(has(w,'闪避')){s.me.闪避=true;log(s,'me',`你 ${c.名} → 你 闪避就绪，下次攻击免疫`)}
+    else{
+      const to=friend||s.me;
+      const b=cardBlock(s,c,s.me);to.格挡=(to.格挡||0)+b;fxFloat(to,'+'+b,'block');
+      if(has(w,'护盾'))to.护盾=true;
+      const drew=has(w,'抽牌')?drawPlus(s,s.me,1):0;
+      const ex=applyWords(s,s.me,needFoe(s)||to,w.filter(x=>x!=='抽牌'),0,c);
+      log(s,'me',`你 ${c.名} → ${whoName(s,to)} 格挡+${b}（现${to.格挡}）${has(w,'护盾')?' 护盾持续':''}${drew?` 抽${drew}`:''}${ex}`);
+    }
+  }else{
+    let ex='';
+    if(has(w,'回血')){
+      const h=cardBlock(s,c,s.me);
+      friend.hp=Math.min(friend.hpMax,friend.hp+h);
+      fxHeal(friend,h);
+      ex=` ${friend.名} 生命+${h} 余血${Math.max(0,friend.hp)}/${friend.hpMax}`;
+    }
+    if(has(w,'抽牌'))ex+=` 抽${drawPlus(s,s.me,1)}`;
+    if(has(w,'摄魂')){
+      foe=foe||needFoe(s);
+      if(foe){const r=hitSoul(s,foe,cardDmg(s,c,s.me,foe));ex+=` ${soulText(foe,r)}`}
+    }
+    const wordTo=has(w,'摄魂')?(foe||s.me):(has(w,'回血')?friend:s.me);
+    ex+=applyWords(s,s.me,wordTo,w.filter(x=>!['回血','抽牌','摄魂'].includes(x)),0,c);
+    log(s,'me',`你 ${c.名} →${ex||' 生效'}`);
+  }
+  if(over(s))return finish();
+  lockIfDown(s);
+  scheduleRender();
+}
+function playScene(i){
+  const s=S;if(!s||s.done||!needAlive(s))return;
+  const sc=s.scenes[i];if(!sc||sc.used)return;
+  const txt=SCENES[sc.k]?.f(s);
+  if(!txt)return toast('当前条件不满足');
+  sc.used=true;log(s,'me',`你 ${txt}`);
+  if(over(s))return finish();
+  lockIfDown(s);
+  scheduleRender();
+}
+function meleeDmg(from,to){
+  let raw=4*powMul(from.dc)*gapMul(from.dc,to.dc);
+  if(from.dc+12<=to.dc)raw*=.5;
+  return Math.max(1,Math.round(raw));
+}
+function standMelee(){
+  const s=S;if(!s||s.done||s.me.meleed||!needAlive(s))return;
+  if(s.me.滞涩>=5)return toast('滞涩过深');
+  const t=needFoe(s);if(!t)return toast('先点一个敌人');
+  s.me.meleed=true;fxSlash(t);fxCast(styleName(s.体裁,'近身'),'atk');fxFlash('hit');
+  const spread=s.spread&&livingFoes(s).length>=2;
+  const d=hit(s,s.me,t,Math.max(1,Math.round(meleeDmg(s.me,t)*(spread?0.7:1))));
+  let extra='';
+  if(spread){
+    const bits=livingFoes(s).filter(f=>f!==t).map(x=>woundText(x,hit(s,s.me,x,Math.max(1,Math.round(meleeDmg(s.me,x)*.4))),s.me));
+    if(bits.length)extra=` 群攻${bits.join('、')}`;
+  }
+  log(s,'me',`你 ${styleName(s.体裁,'近身')} → ${woundText(t,d,s.me)}${extra}`);
+  if(over(s))return finish();
+  lockIfDown(s);
+  scheduleRender();
+}
+function toggleSpread(){
+  const s=S;if(!s||s.done||!needAlive(s))return;
+  if(livingFoes(s).length<2)return toast('只有一个敌人');
+  s.spread=!s.spread;
+  render();
+}
+function standPress(all){
+  const s=S;if(!s||s.done||s.me.pressed||!needAlive(s))return;
+  if(s.me.sp<1)return toast('神识不够');
+  if(all){
+    const list=livingFoes(s);
+    if(!list.length)return toast('没有敌人');
+    s.me.sp--;s.me.pressed=true;
+    const bits=list.map(t=>{
+      if(s.me.dc<t.dc)return`${t.名} 压不住`;
+      return`${t.名} ${press(s,s.me,t)}`;
+    });
+    log(s,'me',`你 ${styleName(s.体裁,'群压')} → ${bits.join('；')}`);
+  }else{
+    const t=needFoe(s);if(!t)return toast('先点一个敌人');
+    s.me.sp--;s.me.pressed=true;
+    fxCast(styleName(s.体裁,'威压'),'util');fxFlash('cast');
+    log(s,'me',`你 ${styleName(s.体裁,'威压')} → ${t.名} ${press(s,s.me,t)}`);
+  }
+  if(over(s))return finish();
+  lockIfDown(s);
+  scheduleRender();
+}
+function standBurn(){
+  const s=S;if(!s||s.done||!needAlive(s))return;
+  if(!burnOk(s.me))return toast(s.me.burned?'一场只能燃一次':s.me.bl<s.me.blMax*.4?'精血低于四成':'精血不足');
+  const cost=burnCost(s.me);
+  s.me.bl-=cost;s.me.burned=true;
+  fxFlash('burn');fxCast(styleName(s.体裁,'燃血'),'atk');
+  const mul=hasRoot(s.me,'火')?1:0.8;
+  s.me.增伤=(s.me.增伤||0)+mul;s.me.费+=2;
+  log(s,'me',`你 ${styleName(s.体裁,'燃血')} → 本回合伤害 ×${hasRoot(s.me,'火')?'2.0':'1.8'}，费用+2（现${s.me.费}），精血-${cost} 余${s.me.bl}/${s.me.blMax}`);
+  scheduleRender();
+}
+function fleeRate(s){
+  const foe=peekFoe(s)||s.foe;
+  const it=(planActs(s,foe,1)[0]||{});
+  return clamp(55+(s.me.dc-foe.dc)*1.5+(s.me.遁加||0)+(hasRoot(s.me,'风')?10:0)
+    -s.me.滞涩*8-(it.型==='atk'?15:0)-(foe.逼角?20:0),5,95);
+}
+function standFlee(){
+  const s=S;if(!s||s.done||!needAlive(s))return;
+  if(s.me.mp<1||s.me.sp<1)return toast('灵力或神识不够');
+  s.me.mp--;s.me.sp--;
+  const rate=fleeRate(s);
+  const roll=Math.floor(rnd(s.seed+s.turn*977+s.fleeTry*31)*100);
+  s.fleeTry++;
+  if(roll<rate){log(s,'me',`你 ${styleName(s.体裁,'遁')} → 成功率${Math.round(rate)}% 掷${roll} 脱战`);s.done='脱战';return finish()}
+  log(s,'me',`你 ${styleName(s.体裁,'遁')} → 成功率${Math.round(rate)}% 掷${roll} 失败`);
+  s.me.锁牌=true;
+  endTurn(true);
+}
+function endTurn(punish){
+  const s=S;if(!s||s.done)return;
+  s.discard.push(...s.hand);s.hand=[];
+  if(!punish)log(s,'sys','你结束');
+  woodTick(s);
+  (s.foes||[s.foe]).forEach(f=>tickBurn(s,f));
+  if(over(s))return finish();
+  allyTurn(s);
+  if(s.done)return finish();
+  foeTurn(s,!!punish);
+  if(s.done)return finish();
+  tickBurn(s,s.me);
+  (s.allies||[]).forEach(a=>tickBurn(s,a));
+  if(over(s))return finish();
+  if(s.me.看穿>0)s.me.看穿--;
+  if(s.迷雾>0)s.迷雾--;
+  s.me.锁牌=false;
+  s.turn++;
+  startTurn(s);
+  save().then(()=>scheduleRender(420));
+}
+
+let statCache={};
+function readStat(){
+  let raw={};
+  try{
+    if(typeof Mvu!=='undefined'&&Mvu.getMvuData){
+      const id=typeof getCurrentMessageId==='function'?getCurrentMessageId():'latest';
+      raw=obj(Mvu.getMvuData({type:'message',message_id:id})?.stat_data);
+      if(!Object.keys(raw).length)raw=obj(Mvu.getMvuData({type:'message',message_id:'latest'})?.stat_data);
+    }
+  }catch(e){console.warn('[战斗] Mvu 读取失败',e)}
+  if(!Object.keys(raw).length){try{raw=obj((typeof getAllVariables==='function'?getAllVariables():{})?.stat_data)}catch(e){}}
+  statCache=obj(unwrap(raw));return statCache;
+}
+function childObj(p,k){const cur=p[k],inner=nodeOf(cur);
+  if(inner&&typeof inner==='object'&&!Array.isArray(inner))return inner;
+  const fresh={};if(Array.isArray(cur))cur[0]=fresh;else p[k]=fresh;return fresh}
+function setLeaf(p,k,v){const cur=p[k];if(Array.isArray(cur))cur[0]=v;else p[k]=v}
+async function commit(mutate){
+  if(typeof Mvu==='undefined'||!Mvu.replaceMvuData)return false;
+  try{
+    const last=typeof getLastMessageId==='function'?getLastMessageId()
+      :(typeof getCurrentMessageId==='function'?getCurrentMessageId():'latest');
+    let target=last;
+    if(typeof getChatMessages==='function'){const ms=getChatMessages('0-'+last,{role:'assistant'});
+      if(ms?.length)target=ms.at(-1).message_id}
+    const full=Mvu.getMvuData({type:'message',message_id:target});
+    if(!full?.stat_data)return false;
+    mutate(full.stat_data);
+    await Mvu.replaceMvuData(full,{type:'message',message_id:target});
+    return true;
+  }catch(e){console.error('[战斗] 写回失败',e);toast(`写回失败：${e?.message||e}`);return false}
+}
+const packActor=a=>({hp:a.hp,格挡:a.格挡,sp:a.sp,mp:a.mp,bl:a.bl,滞涩:a.滞涩,i:a.i||0,
+  burned:a.burned?1:0,meleed:a.meleed?1:0,护盾:a.护盾?1:0,反伤:a.反伤?1:0,看穿:a.看穿||0,冰封:a.冰封||0,
+  灼烧:a.灼烧||0,闪避:a.闪避?1:0,减势:a.减势?1:0,隐匿:a.隐匿?1:0,封灵:a.封灵?1:0,
+  逼角:a.逼角?1:0,闪后抽:a.闪后抽?1:0,遁加:a.遁加||0,
+  stack:a.stack||1,atkMul:a.atkMul||1,基hpMax:a.基hpMax||a.hpMax,vsDc:a.vsDc||0,显示:a.显示||'',
+  基dc:a.基dc!=null?a.基dc:a.dc,dc:a.dc,势标:a.势标||'',每回合:a.每回合||0});
+async function save(){
+  if(!S)return;
+  await commit(st=>{
+    const b=childObj(st,'_战斗');
+    setLeaf(b,'状态',S.done?'已结束':'进行中');
+    setLeaf(b,'战斗ID',S.id);
+    setLeaf(b,'结果',S.done||'');
+    setLeaf(b,'回合',S.turn);
+    setLeaf(b,'对手',(S.foes||[S.foe]).map(f=>f.名).join('、'));
+    setLeaf(b,'瞄准',S.aim||0);
+    b.我方=packActor(S.me);b.敌方=(S.foes||[S.foe]).map(packActor);b.队友=(S.allies||[]).map(packActor);
+    setLeaf(b,'种子',S.seed);
+    setLeaf(b,'弃牌',S.discard.map(c=>c.uid).join(','));
+    setLeaf(b,'手牌',S.hand.map(c=>c.uid).join(','));
+    setLeaf(b,'已用场景',S.scenes.filter(x=>x.used).map(x=>x.k).join(','));
+    setLeaf(b,'待处置',S.awaitFate?1:0);
+    setLeaf(b,'处置',(S.fate||[]).map(x=>`${x.名}|${x.pick}`).join(','));
+    setLeaf(b,'群攻',S.spread?1:0);
+    setLeaf(b,'体裁',S.体裁||'近战');
+  });
+}
+function makeFate(s){
+  return(s.foes||[]).filter(f=>f&&f.hp<=0&&(f.stack||1)<=1)
+    .map(f=>({名:f.显示||f.名,rec名:f.rec名||f.显示||f.名,stack:1,pick:'beat'}));
+}
+function writeRec(root,名,hp,tag,opt={}){
+  if(!名)return;
+  const bags=[
+    [root.当前在场互动女性,false],
+    [root.当前在场互动男性,false],
+    [root.女性角色档案,true],
+    [root.男性角色档案,true],
+  ];
+  bags.forEach(([bag,canStatus])=>{
+    if(opt.presentOnly&&canStatus)return;
+    const hit=recPick(bag,名);
+    if(!hit)return;
+    const rec=nodeOf(obj(bag)[hit.key]);
+    if(!rec||typeof rec!=='object')return;
+    setLeaf(rec,'生命',hp);
+    if(tag&&canStatus){
+      const old=String(nodeOf(rec.状态)||'');
+      const keep=old==='无异常'||!old?'':old;
+      const bits=new Set((keep?keep.split(/[、,，]/):[]).filter(x=>x&&x!=='死亡'&&x!=='重伤'));
+      bits.add(tag);
+      setLeaf(rec,'状态',[...bits].join('、'));
+    }
+  });
+}
+function partyNames(s){
+  return['你'].concat((s.allies||[]).map(a=>a.显示||a.名)).filter(Boolean);
+}
+function writeHero(root,s){
+  const hero=childObj(root,'主角');
+  if(s.done!=='负')setLeaf(hero,'生命',s.writeback.生命);
+  setLeaf(hero,'灵力',s.writeback.灵力);
+  setLeaf(hero,'神识',s.writeback.神识);
+  if(s.me.burned||s.me.bl<s.me.blMax)setLeaf(hero,'精血',s.writeback.精血);
+  if(s.done!=='负'&&s.writeback.状态){
+    const old=String(nodeOf(hero.状态)||'无异常');
+    const keep=old==='无异常'||!old?'':old;
+    const bits=new Set((keep?keep.split(/[、,，]/):[]).concat(s.writeback.状态.split('、')).filter(Boolean));
+    setLeaf(hero,'状态',[...bits].join('、')||'无异常');
+  }else if(s.done==='负'&&s.me.burned){
+    const old=String(nodeOf(hero.状态)||'无异常');
+    const keep=old==='无异常'||!old?'':old;
+    const bits=new Set((keep?keep.split(/[、,，]/):[]).concat(['精血亏空']).filter(x=>x&&x!=='死亡'));
+    setLeaf(hero,'状态',[...bits].join('、')||'无异常');
+  }
+  const gear=childObj(hero,'器物');
+  rows(s.wear).forEach(([名,add])=>{const g=nodeOf(gear[名]);
+    if(g&&typeof g==='object')setLeaf(g,'损耗度',clamp(num(nodeOf(g.损耗度))+add,0,100))});
+  const b=childObj(root,'_战斗');
+  setLeaf(b,'状态','已结束');setLeaf(b,'结果',s.done);setLeaf(b,'战斗ID',s.id);
+  setLeaf(b,'对手',(s.foes||[s.foe]).map(f=>f.名).join('、'));
+  setLeaf(b,'结算楼层',typeof getLastMessageId==='function'?getLastMessageId():0);
+  setLeaf(b,'待处置',s.awaitFate?1:0);
+  setLeaf(b,'处置',(s.fate||[]).map(x=>`${x.名}|${x.pick}`).join(','));
+  if('战报' in b)delete b.战报;
+  b.我方=packActor(s.me);b.敌方=(s.foes||[s.foe]).map(packActor);b.队友=(s.allies||[]).map(packActor);
+}
+async function finish(){
+  const s=S;if(!s)return;
+  if(!s.done){
+    if(!livingFoes(s).length)s.done='胜';
+    else if(!livingParty(s).length)s.done='负';
+  }
+  s.drill=isDrill(s);
+  const foeHp=(s.foes||[s.foe]).map(f=>`${f.名}${f.hp<=0?'倒下':`余血${Math.max(0,Math.round(f.hp))}`}`).join(' ');
+  log(s,'sys',`结果 ${s.done} · 你生命${Math.max(0,s.me.hp)}/${s.me.hpMax} ${foeHp}`);
+  const pct=(v,m)=>clamp(Math.round(Math.max(0,v)/m*100),0,100);
+  s.writeback={
+    生命:pct(s.me.hp,s.me.hpMax),灵力:pct(s.me.mp,s.me.mpMax),
+    神识:pct(s.me.sp,s.me.spMax),精血:pct(s.me.bl,s.me.blMax)
+  };
+  const st=[];
+  if(s.done!=='负'){
+    if(s.writeback.生命<=0)st.push(s.drill?'重伤':'死亡');
+    else if(s.writeback.生命<25)st.push('重伤');
+  }
+  if(s.writeback.神识<20)st.push('神识刺痛');
+  if(s.writeback.灵力===0)st.push('灵力枯竭');
+  if(s.me.burned)st.push('精血亏空');
+  s.writeback.状态=st.length?st.join('、'):'';
+  s.fate=s.done==='胜'&&!s.drill?makeFate(s):[];
+  s.awaitFate=s.fate.length>0;
+  if(s.drill&&s.done==='胜')log(s,'sys','演练结束，不处置生死');
+  if(s.done==='负'){
+    const party=partyNames(s).join('、');
+    const foes=(s.foes||[]).map(f=>f.显示||f.名).join('、')||'敌人';
+    const kind=s.drill?'演练/切磋':'遭遇或死斗';
+    log(s,'sys',`战败。请根据具体场景、战斗性质（${kind}）以及敌人（${foes}）的性格，决定主角团各方（${party}）各自是被击杀、击败生还，还是濒死留下。胜负已定，不要改成打赢。`);
+  }
+  const pctA=a=>clamp(Math.round(Math.max(0,a.hp)/a.hpMax*100),0,100);
+  await commit(root=>{
+    writeHero(root,s);
+    if(s.done==='负')return;
+    const named=a=>(a.stack||1)>1?null:(a.rec名||a.显示||a.名);
+    if(s.drill){
+      (s.foes||[]).forEach(f=>{const n=named(f);if(n)writeRec(root,n,pctA(f),'',{presentOnly:true})});
+      (s.allies||[]).forEach(a=>{const n=named(a);if(n)writeRec(root,n,pctA(a),'',{presentOnly:true})});
+      return;
+    }
+    if(!s.awaitFate)(s.foes||[]).forEach(f=>{const n=named(f);if(n)writeRec(root,n,pctA(f))});
+    (s.allies||[]).forEach(a=>{const n=named(a);if(n)writeRec(root,n,pctA(a))});
+  });
+  busy=false;
+  if(s.done==='胜'){fxBanner('胜','win');fxWin()}
+  else if(s.done==='负')fxBanner('负','lose');
+  else if(s.done==='脱战')fxBanner('脱战','flee');
+  scheduleRender(s.done==='胜'?720:560);
+}
+async function confirmFate(){
+  const s=S;if(!s||!s.awaitFate)return;
+  (s.fate||[]).forEach(x=>log(s,'sys',`处置 ${x.名} ${x.pick==='kill'?'死亡':'击败'}`));
+  s.awaitFate=false;
+  await commit(root=>{
+    writeHero(root,s);
+    (s.fate||[]).forEach(x=>{
+      if((x.stack||1)>1)return;
+      if(x.pick==='kill')writeRec(root,x.rec名,0,'死亡');
+      else writeRec(root,x.rec名,8,'重伤');
+    });
+  });
+  toast('处置已写入');
+  render();
+}
+function dummyName(名){return /傀儡|木人|稻草人|靶子|假人|影傀|木桩/.test(String(名||''))}
+function isDrill(s){
+  if(/演练|切磋|试炼/.test(s.性质||''))return true;
+  if(/演练|试炼|切磋|比试|点到为止|试招|试剑/.test(`${s.起因||''}${s.地形||''}`))return true;
+  const foes=s.foes||[];
+  return !!foes.length&&foes.every(f=>dummyName(f.显示||f.名));
+}
+function reportText(s){
+  const names=(s.foes||[]).map(f=>f.显示||f.名).join('、');
+  const head=`【战报】 ${s.done||'进行中'} · ${s.drill?'演练/切磋，不写生死 · ':''}${s.起因||`对阵${names}`}`;
+  const lines=s.log.filter(x=>x.who!=='sys'||/开场|结果|灼烧|闪开|春荣|遁走|处置|倒下|演练|战败/.test(x.t)).slice(-36).map(x=>x.t);
+  if(s.awaitFate)(s.fate||[]).forEach(x=>lines.push(`处置 ${x.名} ${x.pick==='kill'?'死亡':'击败'}（未确认）`));
+  return [head].concat(lines).concat([LOG_HINT]).join('\n');
+}
+function copyReport(){
+  if(!S)return;
+  const t=reportText(S);
+  const done=()=>toast('已复制，贴进下一句即可');
+  const fall=()=>{
+    const ta=document.createElement('textarea');
+    ta.value=t;document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');done()}catch(e){toast('复制失败，请自己选中')}
+    document.body.removeChild(ta);
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(done).catch(fall);
+  else fall();
+}
+
+function readMessageText(){
+  try{
+    if(typeof getChatMessages==='function'){
+      const id=typeof getCurrentMessageId==='function'?getCurrentMessageId():-1;
+      const m=getChatMessages(String(id));
+      const row=m?.[0]||{};
+      return String(row.message||row.mes||row.original_mes||'');
+    }
+  }catch(e){}
+  return '';
+}
+function seedFromReplace(){
+  const el=qs('#bt-raw-seed');
+  const t=String(el&&el.value||'').trim();
+  if(!t||t==='$1'||t==='$&')return '';
+  return t;
+}
+function extractBattleBlock(text){
+  const raw=String(text||'');
+  const whole=raw.match(/<战斗>[\s\S]*?<\/战斗>/);
+  if(whole)return whole[0].trim();
+  const inner=raw.match(/<战斗>([\s\S]*?)<\/战斗>/);
+  if(inner)return '<战斗>\n'+inner[1].trim()+'\n</战斗>';
+  const t=raw.trim();
+  if(t&&/对手\s*[:：]/.test(t))return '<战斗>\n'+t+'\n</战斗>';
+  return t;
+}
+function currentSource(){
+  if(debugOverride)return debugOverride;
+  return extractBattleBlock(seedFromReplace())||extractBattleBlock(readMessageText());
+}
+function fillDebugSource(force){
+  const ta=qs('#bt-dbg-src');if(!ta)return '';
+  if(!force&&ta.value.trim())return ta.value;
+  ta.value=currentSource();
+  return ta.value;
+}
+function setDebugOpen(open){
+  const box=qs('#bt-dbg'),btn=qs('#bt-dbg-btn');
+  if(box)box.hidden=!open;
+  if(btn)btn.classList.toggle('on',!!open);
+  if(open)fillDebugSource(false);
+}
+function applyDebugTag(){
+  const ta=qs('#bt-dbg-src');
+  const raw=String(ta&&ta.value||'').trim();
+  if(!raw)return toast('原文是空的');
+  debugOverride=extractBattleBlock(raw)||raw;
+  const fresh=newBattle();
+  S=fresh;
+  startTurn(S);
+  save().then(()=>{render();toast('已按原文重开')});
+}
+function readTag(){
+  const text=currentSource();
+  const blk=text.match(/<战斗>([\s\S]*?)<\/战斗>/);
+  const out={对手:[],队友:[],起因:'',地形:'',场景:[],场景原文:'',性质:'',体裁:'',势:[]};
+  if(!blk)return out;
+  blk[1].split(/\n+/).forEach(line=>{
+    const m=line.match(/^\s*([^:：]+)[:：]\s*(.+?)\s*$/);
+    if(!m)return;
+    const k=m[1].trim(),v=m[2].trim();
+    if(k==='对手')out.对手.push(...parseUnits(v));
+    else if(k==='队友')out.队友.push(...parseUnits(v));
+    else if(k==='起因')out.起因=v;
+    else if(k==='地形')out.地形=v;
+    else if(k==='性质')out.性质=v;
+    else if(k==='体裁')out.体裁=v.replace(/\s+/g,'');
+    else if(k==='场景'){out.场景原文=v;out.场景=v.split(/\s*\|\s*/).map(x=>SCENE_ALIAS[x]||x).filter(x=>SCENES[x]).slice(0,3);}
+    else if(k==='势')out.势.push(...parseShiLine(v));
+    else if(k==='敌势')out.势.push(...parseShiLine(v,'敌'));
+  });
+  out.对手=out.对手.slice(0,8);
+  out.队友=out.队友.slice(0,3);
+  if(!out.势.length&&out.起因)out.势=shiFromCause(out.起因);
+  out.势=out.势.slice(0,6);
+  return out;
+}
+
+function buildDeck(hero,dc,rootList,style){
+  const deck=[];
+  if(dc<1)mortalCards().forEach(c=>deck.push(c));
+  else{
+    const skin=skinOf(hero.灵根);
+    fateCards(dc,skin).forEach(c=>deck.push(c));
+    rootList.forEach(r=>deck.push({...r.牌,id:'root:'+r.k,品:'玄',熟:50}));
+  }
+  artCards(hero).forEach(c=>deck.push(c));
+  gearCards(hero,rootList).forEach(c=>deck.push(c));
+  deck.forEach((c,i)=>{stylePaintCard(c,style);c.uid=`${c.id}#${i}`});
+  return deck;
+}
+function makeActor(名,dc,pcts,extra={}){
+  const p=pools(dc);
+  let hpMax=p.体魄;
+  if(num(pcts.精血,100)<20)hpMax=Math.round(hpMax*.85);
+  return{名,dc,基dc:dc,hpMax,spMax:p.神识,blMax:p.精血,mpMax:p.灵力池,每回合:p.每回合灵力,
+    hp:Math.round(hpMax*clamp(num(pcts.生命,100),0,100)/100),
+    sp:Math.round(p.神识*clamp(num(pcts.神识,100),0,100)/100),
+    bl:Math.round(p.精血*clamp(num(pcts.精血,100),0,100)/100),
+    mp:Math.round(p.灵力池*clamp(num(pcts.灵力,100),0,100)/100),
+    格挡:0,滞涩:0,费:0,i:0,burned:false,...extra};
+}
+function makeUnit(stat,unit,fallbackDc,side,style){
+  const stack=clamp(num(unit.stack,1),1,99);
+  const rec=stack>1?{}:recOf(stat,unit.名);
+  const tagged=unit.境界||'';
+  const from=(tagged&&(looksRealm(tagged)||dcTable(tagged)!=null))?tagged:(rec.境界||'');
+  const dc=dcOf(from)||(String(from).includes('凡人')?0:fallbackDc);
+  const a=makeActor(unit.名,dc,{
+    生命:num(rec.生命,100),灵力:num(rec.灵力,100),神识:num(rec.神识,100),精血:num(rec.精血,100)
+  },{roots:rootsOf(rec.灵根||'').map(r=>r.k),rec名:rec._key||unit.名,显示:unit.名,side,stack,atkMul:1,vsDc:fallbackDc});
+  paintFace(a,rec);
+  a.intents=intentTable(unit.名,dc,rec,style);
+  const art=parseKit(rec.功法),gear=parseKit(rec.器物);
+  a.功法标=art?art.名:'';
+  a.器物标=gear?gear.名:'';
+  if(gear&&gear.类==='护具')a.格挡=(a.格挡||0)+Math.round(8*(TIER[tierOf(rec.器物)]||1));
+  a.基hpMax=a.hpMax;
+  if(stack>1){
+    const mul=stackHpMul(stack,dc,fallbackDc);
+    a.hpMax=Math.round(a.hpMax*mul);
+    a.hp=Math.round(a.hp*mul);
+    a.atkMul=stackAtkMul(stack,dc,fallbackDc);
+    renameStack(a);
+  }
+  return a;
+}
+function newBattle(){
+  const stat=readStat(),hero=obj(stat.主角),tag=readTag();
+  const myDc=dcOf(hero.境界);
+  const style=inferStyle(tag);
+  const units=tag.对手.length?tag.对手:[{名:'无名散修',境界:''}];
+  const floor=typeof getLastMessageId==='function'?getLastMessageId():0;
+  const names=units.map(u=>`${u.名}×${u.stack||1}`).concat((tag.队友||[]).map(u=>`${u.名}×${u.stack||1}`)).join('+');
+  const shiKey=(tag.势||[]).map(x=>`${x.who}${x.词}${x.度}`).join('+');
+  const seed=Math.abs([...(`${floor}|${names}|${shiKey}|${style}`)].reduce((a,c)=>Math.imul(a^c.charCodeAt(0),16777619),2166136261))>>>0;
+  const rootList=rootsOf(hero.灵根);
+  const me=makeActor('你',myDc,hero,{roots:rootList.map(r=>r.k),每回合:pools(myDc).每回合灵力});
+  paintFace(me,hero);
+  me.格挡=armorBlock(hero);
+  me.遁加=artCards(hero).reduce((n,c)=>n+(c.遁||0),0);
+  const foes=units.map(u=>makeUnit(stat,u,myDc,'foe',style));
+  const allies=(tag.队友||[]).map(u=>makeUnit(stat,u,myDc,'ally',style));
+  const deck=buildDeck(hero,myDc,rootList,style);
+  const s={
+    id:`${floor}|${names}|${shiKey}|${style}`,seed,turn:1,done:'',aim:0,mark:{k:'foe',i:0},awaitFate:false,fate:[],
+    me,foe:foes[0],foes,allies,hand:[],discard:[],deck:shuffle(deck,seed),all:deck,
+    scenes:tag.场景.map(k=>({k,名:SCENES[k].名,说:SCENES[k].说,used:false})),
+    地形:tag.地形,起因:tag.起因,性质:tag.性质||'',体裁:style,势:tag.势||[],log:[],wear:{},fleeTry:0,迷雾:0,spread:false
+  };
+  s.drill=isDrill(s);
+  s.势说=applyShi(s,tag.势);
+  return s;
+}
+function restore(saved,fresh){
+  const s=fresh;
+  const load=(a,d)=>{if(!d)return;
+    a.hp=num(d.hp,a.hp);a.格挡=num(d.格挡);a.sp=num(d.sp,a.sp);
+    a.mp=num(d.mp,a.mp);a.bl=num(d.bl,a.bl);a.滞涩=num(d.滞涩);a.i=num(d.i);
+    a.burned=!!num(d.burned);a.meleed=!!num(d.meleed);a.护盾=!!num(d.护盾);a.反伤=!!num(d.反伤);
+    a.看穿=num(d.看穿);a.冰封=num(d.冰封);a.灼烧=num(d.灼烧);
+    a.闪避=!!num(d.闪避);a.减势=!!num(d.减势);a.隐匿=!!num(d.隐匿);
+    a.封灵=!!num(d.封灵);a.逼角=!!num(d.逼角);a.闪后抽=!!num(d.闪后抽);a.遁加=num(d.遁加,a.遁加);
+    if(d.stack!=null)a.stack=clamp(num(d.stack,a.stack||1),1,99);
+    if(d.atkMul!=null)a.atkMul=num(d.atkMul,a.atkMul||1);
+    if(d.基hpMax)a.基hpMax=num(d.基hpMax,a.基hpMax);
+    if(d.vsDc!=null)a.vsDc=num(d.vsDc,a.vsDc);
+    if(d.显示)a.显示=String(d.显示);
+    if(d.基dc!=null)a.基dc=num(d.基dc,a.基dc);
+    if(d.dc!=null)a.dc=num(d.dc,a.dc);
+    if(d.势标)a.势标=String(d.势标);
+    if(d.每回合!=null)a.每回合=num(d.每回合,a.每回合);
+    if((a.stack||1)>1||a.显示)renameStack(a);
+  };
+  load(s.me,obj(saved.我方));
+  const packed=Array.isArray(saved.敌方)?saved.敌方:[saved.敌方];
+  (s.foes||[]).forEach((f,i)=>load(f,obj(packed[i])));
+  const pals=Array.isArray(saved.队友)?saved.队友:[];
+  (s.allies||[]).forEach((a,i)=>load(a,obj(pals[i])));
+  s.foe=s.foes[num(saved.瞄准)]||s.foes.find(f=>f.hp>0)||s.foes[0];
+  s.aim=Math.max(0,s.foes.indexOf(s.foe));
+  s.mark={k:'foe',i:s.aim};
+  s.turn=num(saved.回合,1);s.done=String(saved.结果||'');
+  s.spread=!!num(saved.群攻);
+  const byUid=u=>s.all.find(c=>c.uid===u);
+  const pick=str=>String(str||'').split(',').filter(Boolean).map(byUid).filter(Boolean);
+  s.hand=pick(saved.手牌);s.discard=pick(saved.弃牌);
+  const used=new Set([...s.hand,...s.discard]);
+  s.deck=shuffle(s.all.filter(c=>!used.has(c)),s.seed);
+  const usedSc=new Set(String(saved.已用场景||'').split(',').filter(Boolean));
+  s.scenes.forEach(sc=>{if(usedSc.has(sc.k))sc.used=true});
+  if(Array.isArray(saved.战报))s.log=saved.战报.map(t=>({who:'sys',t}));
+  s.awaitFate=!!num(saved.待处置)&&s.done==='胜'&&!isDrill(s);
+  const rawFate=String(saved.处置||'');
+  if(rawFate){
+    s.fate=rawFate.split(',').filter(Boolean).map(row=>{
+      const [名,pick]=row.split('|');
+      const f=(s.foes||[]).find(x=>x.名===名)||{};
+      return{名,rec名:f.rec名||f.显示||名,stack:f.stack||1,pick:pick==='kill'?'kill':'beat'};
+    }).filter(x=>(x.stack||1)<=1);
+  }else s.fate=s.awaitFate?makeFate(s):[];
+  if(!s.fate.length)s.awaitFate=false;
+  return s;
+}
+
+const fxMem={hp:new Map(),turn:0,ready:false};
+function fxHost(){return qs('#bt-fx')}
+function resolveActorEl(who){
+  if(!who)return qs('[data-foe].is-aim')||qs('#bt-foe');
+  if(who==='me')return qs('#bt-me');
+  if(who==='foe')return qs('[data-foe].is-aim')||qs('#bt-foe');
+  return actorBox(S,who);
+}
+function fxFloat(who,text,kind){
+  const host=fxHost(),root=qs('#bt'),box=resolveActorEl(who);
+  if(!host||!box||!root)return;
+  const a=box.getBoundingClientRect(),b=root.getBoundingClientRect();
+  const el=document.createElement('i');
+  const n=Math.abs(parseInt(String(text).replace(/[^\d-]/g,''),10)||0);
+  el.className='bt-float '+kind+(kind==='dmg'&&n>=22?' crit':n>=14?' big':'');
+  el.textContent=text;
+  el.style.left=Math.round(a.left-b.left+a.width*(.32+Math.random()*.36))+'px';
+  el.style.top=Math.round(a.top-b.top+22+Math.random()*22)+'px';
+  host.appendChild(el);
+  setTimeout(()=>{if(el.parentNode)el.parentNode.removeChild(el)},1800);
+}
+function fxShake(who){
+  const el=resolveActorEl(who);
+  if(el){el.classList.remove('is-hit');void el.offsetWidth;el.classList.add('is-hit')}
+  if(who&&!hitMarks.includes(who))hitMarks.push(who);
+}
+function fxHeal(side,n){if(n>0)fxFloat(side,'+'+n,'heal')}
+function fxFlash(kind){
+  const el=qs('#bt-flash');if(!el)return;
+  el.className='bt-flash on '+(kind||'hit');
+  void el.offsetWidth;
+  requestAnimationFrame(()=>el.classList.add('go'));
+  clearTimeout(fxFlash.t);
+  fxFlash.t=setTimeout(()=>{el.className='bt-flash'},640);
+}
+function fxImpact(who){
+  const host=fxHost(),root=qs('#bt'),box=resolveActorEl(who);
+  if(!host||!root||!box)return;
+  const a=box.getBoundingClientRect(),b=root.getBoundingClientRect();
+  const el=document.createElement('div');
+  el.className='bt-impact';
+  el.style.left=Math.round(a.left-b.left+a.width/2)+'px';
+  el.style.top=Math.round(a.top-b.top+a.height*.3)+'px';
+  host.appendChild(el);
+  setTimeout(()=>{if(el.parentNode)el.parentNode.removeChild(el)},720);
+}
+function fxSlash(who){
+  const host=fxHost(),root=qs('#bt');if(!host||!root)return;
+  const box=resolveActorEl(who);
+  const el=document.createElement('div');el.className='bt-slash';
+  if(box){
+    const a=box.getBoundingClientRect(),b=root.getBoundingClientRect();
+    el.style.left=Math.round(a.left-b.left+a.width*.12)+'px';
+    el.style.top=Math.round(a.top-b.top+a.height*.28)+'px';
+    el.style.width=Math.round(a.width*.76)+'px';
+    el.style.right='auto';
+  }
+  host.appendChild(el);setTimeout(()=>{if(el.parentNode)el.parentNode.removeChild(el)},640);
+}
+function fxCast(name,kind){
+  const host=fxHost();if(!host||!name)return;
+  const el=document.createElement('div');
+  el.className='bt-cast '+(kind||'');
+  el.textContent=name;
+  host.appendChild(el);
+  setTimeout(()=>{if(el.parentNode)el.parentNode.removeChild(el)},960);
+}
+function fxFlyCard(el,kind){
+  const host=fxHost(),root=qs('#bt');
+  if(!host||!root||!el)return;
+  const a=el.getBoundingClientRect(),b=root.getBoundingClientRect();
+  const fly=el.cloneNode(true);
+  fly.removeAttribute('data-play');
+  fly.disabled=true;
+  fly.className='bt-card '+(kind||'')+' bt-card-fly';
+  fly.style.cssText=`left:${Math.round(a.left-b.left)}px;top:${Math.round(a.top-b.top)}px;width:${Math.round(a.width)}px;height:${Math.round(a.height)}px;margin:0;transform:none`;
+  host.appendChild(fly);
+  requestAnimationFrame(()=>fly.classList.add('go'));
+  setTimeout(()=>{if(fly.parentNode)fly.parentNode.removeChild(fly)},760);
+}
+function fxBanner(text,kind){
+  const el=qs('#bt-banner');if(!el||!text)return;
+  el.hidden=false;
+  el.textContent=text;
+  el.className='bt-banner on '+(kind||'');
+  clearTimeout(fxBanner.t);
+  fxBanner.t=setTimeout(()=>{
+    el.classList.remove('on');
+    setTimeout(()=>{if(!el.classList.contains('on'))el.hidden=true},320);
+  },1600);
+}
+function fxWin(){
+  const host=fxHost();if(!host)return;
+  for(let i=0;i<16;i++){
+    const p=document.createElement('i');
+    p.className='bt-spark';
+    p.style.left=(16+Math.random()*68)+'%';
+    p.style.animationDelay=(Math.random()*.35)+'s';
+    host.appendChild(p);
+    setTimeout(()=>{if(p.parentNode)p.parentNode.removeChild(p)},1800);
+  }
+}
+function feelAfterRender(s){
+  const root=qs('#bt');if(!root||!s)return;
+  root.classList.toggle('is-win',s.done==='胜');
+  root.classList.toggle('is-lose',s.done==='负');
+  root.classList.toggle('is-flee',s.done==='脱战');
+  const markLow=(el,a)=>{
+    if(!el||!a||a.hp<=0||!a.hpMax)return;
+    const r=a.hp/a.hpMax;
+    if(r<=.28)el.classList.add('is-low');
+    if(r<=.12)el.classList.add('is-danger');
+  };
+  markLow(qs('#bt-me'),s.me);
+  (s.foes||[]).forEach((f,i)=>markLow(qs(`[data-foe="${i}"]`),f));
+  (s.allies||[]).forEach((a,i)=>markLow(qs(`[data-ally="${i}"]`),a));
+  const ghost=(el,key,a)=>{
+    if(!el||!a)return;
+    const g=el.querySelector('.bt-hpbar i.ghost');
+    const now=pctW(a.hp,a.hpMax);
+    const prev=fxMem.hp.get(key);
+    if(g&&prev!=null&&prev>now+.4){
+      g.style.transition='none';
+      g.style.width=prev+'%';
+      requestAnimationFrame(()=>{g.style.transition='';g.style.width=now+'%'});
+    }
+    fxMem.hp.set(key,now);
+  };
+  ghost(qs('#bt-me'),'me',s.me);
+  (s.foes||[]).forEach((f,i)=>ghost(qs(`[data-foe="${i}"]`),'f'+i,f));
+  (s.allies||[]).forEach((a,i)=>ghost(qs(`[data-ally="${i}"]`),'a'+i,a));
+  if(!s.done){
+    if(!fxMem.ready){fxBanner('第 '+s.turn+' 回合');fxMem.ready=true}
+    else if(fxMem.turn&&fxMem.turn!==s.turn)fxBanner('第 '+s.turn+' 回合');
+  }
+  fxMem.turn=s.turn;
+  const hits=hitMarks.splice(0);
+  requestAnimationFrame(()=>hits.forEach(who=>{
+    const el=resolveActorEl(who);
+    if(!el)return;
+    el.classList.remove('is-hit');void el.offsetWidth;el.classList.add('is-hit');
+  }));
+}
+function bar(cls,label,v,max){
+  const p=max>0?clamp(v/max*100,0,100):0;
+  return`<div class="bt-bar ${cls}"><em>${esc(label)}<\/em><div><i style="width:${p}%"><\/i><\/div><b>${Math.max(0,Math.round(v))}/${max}<\/b><\/div>`;
+}
+function pctW(v,max){return max>0?clamp(v/max*100,0,100):0}
+function actorHtml(a,mine){
+  const tags=[];
+  if(a.滞涩>0)tags.push(`<span class="bt-pow bad">滞涩 ${a.滞涩}<\/span>`);
+  if(a.灼烧>0)tags.push(`<span class="bt-pow bad">灼烧 ${a.灼烧}<\/span>`);
+  if(a.闪避)tags.push('<span class="bt-pow good">闪避<\/span>');
+  if(a.冰封)tags.push('<span class="bt-pow bad">冰封<\/span>');
+  if(a.减势)tags.push('<span class="bt-pow good">势弱<\/span>');
+  if(a.护盾)tags.push('<span class="bt-pow block">护盾<\/span>');
+  if(a.反伤)tags.push('<span class="bt-pow good">反伤<\/span>');
+  if(a.封灵)tags.push('<span class="bt-pow bad">封灵<\/span>');
+  if(a.burned)tags.push('<span class="bt-pow bad">已燃血<\/span>');
+  if((a.stack||1)>1)tags.push(`<span class="bt-pow">群 ${a.stack}<\/span>`);
+  if(a.势标){
+    const up=(a.dc||0)>(a.基dc!=null?a.基dc:a.dc);
+    tags.push(`<span class="bt-pow ${up?'good':'bad'}">${esc(a.势标)}<\/span>`);
+  }
+  if(a.功法标)tags.push(`<span class="bt-pow">${esc(a.功法标)}<\/span>`);
+  if(a.器物标)tags.push(`<span class="bt-pow">${esc(a.器物标)}<\/span>`);
+  (a.roots||[]).forEach(k=>tags.push(`<span class="bt-pow">${esc(k)}<\/span>`));
+  const shield=a.格挡>0?`<span class="bt-shield">${a.格挡}<\/span>`:'';
+  const hpW=pctW(a.hp,a.hpMax),blkW=a.hpMax>0?clamp((a.格挡||0)/a.hpMax*100,0,100-hpW):0;
+  const bars=`<div class="bt-hp"><div class="bt-hp-row">${shield}
+      <div class="bt-hpbar"><i class="ghost" style="width:${hpW}%"><\/i><i class="hp" style="width:${hpW}%"><\/i>${blkW?`<i class="blk" style="left:${hpW}%;width:${blkW}%"><\/i>`:''}<b>${Math.max(0,Math.round(a.hp))}/${a.hpMax}<\/b><\/div>
+    <\/div>
+    <div class="bt-subbars">
+      <div class="bt-sbar sp" title="神识"><i style="width:${pctW(a.sp,a.spMax)}%"><\/i><\/div>
+      ${mine?`<div class="bt-sbar mp" title="灵力池"><i style="width:${pctW(a.mp,a.mpMax)}%"><\/i><\/div>
+      <div class="bt-sbar bl" title="精血"><i style="width:${pctW(a.bl,a.blMax)}%"><\/i><\/div>`:''}
+    <\/div><\/div>`;
+  const powers=tags.length?`<div class="bt-powers">${tags.join('')}<\/div>`:'';
+  const face=faceHtml(a);
+  const sub=[(a.stack||1)>1?`群 ${a.stack}`:'',esc(realmOf(a.基dc!=null?a.基dc:a.dc)),
+    a.势标?esc(a.势标):'',`DC ${a.dc}`,
+    a.atkMul>1?`势 ${a.atkMul.toFixed(1)}`:'']
+    .filter(Boolean).join(' · ');
+  if(mine)return`${face}
+    <div class="bt-me-main"><h3>${esc(a.名)}<i>${sub}<\/i><\/h3>
+    ${bars}${powers}<\/div>
+    <div class="bt-orbs">${S?orbsHtml(S):''}<\/div>`;
+  return`${face}
+    <h3>${esc(a.名)}<i>${sub}<\/i><\/h3>${bars}${powers}`;
+}
+function intentPred(s,act,k,a){
+  const t=act.target||s.me;
+  if(act.型==='atk')return npcDmg(s,a,t,act.基,{k,weaken:!!a.减势});
+  if(act.型==='heal'||act.型==='def')return Math.round((act.基||6)*powMul(a.dc));
+  if(act.型==='press'){
+    const d=a.dc-(t&&t.dc||0);
+    if(d>0)return Math.min(50,Math.max(8,Math.round(d*1.5)));
+    if(d===0)return 12;
+    return'反';
+  }
+  if(act.词==='摄魂')return 14;
+  return act.词||act.说||'·';
+}
+function intentHtml(s,actor){
+  const a=actor;
+  if(s.done||!a||a.hp<=0)return'';
+  const n=npcSide(s,a)==='ally'?allyActCount(s,a):foeActCount(s,a);
+  if(s.迷雾>0&&!(s.me.看穿>0&&npcSide(s,a)==='foe'))return`<div class="bt-intents"><div class="bt-ib"><em>?<\/em><span>浓雾 · ${n}动<\/span><\/div><\/div>`;
+  const pack=planActs(s,a,n);
+  const extra=s.me.看穿>0&&npcSide(s,a)==='foe'?planActs(s,a,n+1).slice(n):[];
+  const badges=pack.map((act,k)=>{
+    const cls=act.型==='def'?'def':act.型==='heal'?'heal':act.型==='press'||act.词==='摄魂'?'soul':'atk';
+    return`<div class="bt-ib ${cls}"><em>${esc(String(intentPred(s,act,k,a)))}<\/em><span>${esc(actLabel(s,act))}<\/span><\/div>`;
+  }).join('');
+  return`<div class="bt-intents">${badges}<\/div>${extra.length?`<div class="bt-next">再下一手 ${esc(actLabel(s,extra[0]))}<\/div>`:''}`;
+}
+function fanStyle(i,n){
+  if(n<=1)return'';
+  const mid=(n-1)/2;
+  return`--r:${((i-mid)*8).toFixed(2)}deg;--y:${Math.round(Math.abs(i-mid)*10)}px`;
+}
+function cardHtml(c,i,s,n){
+  const w0=c.词||[],aim=wantSpread(s,c)?'spread':cardAim(c);
+  const peekTo=aim==='friend'?needFriend(s):(peekFoe(s)||s.foe);
+  const d=!c.基?0:c.类==='atk'||has(w0,'摄魂')?cardDmg(s,c,s.me,peekTo||s.me,{peek:true}):cardBlock(s,c,s.me);
+  const blood=c.血比?Math.max(1,Math.round(s.me.blMax*c.血比)):(c.血||0);
+  const fee=Math.max(0,(c.费||0)-(s.me.减费||0));
+  const lock=s.done||s.me.hp<=0||s.me.锁牌||s.me.费<fee||(c.识&&s.me.sp<c.识)
+    ||(blood&&s.me.bl<blood)||(c.类==='atk'&&s.me.滞涩>=5);
+  const extra=[c.识?`${c.识}识`:'',blood?`${blood}血`:'',aimLabel(aim)].filter(Boolean).join(' ');
+  const words=w0.length?` · ${w0.join('·')}`:'';
+  return`<button class="bt-card ${c.类}" data-play="${i}" style="${fanStyle(i,n)}" ${lock?'disabled':''}>
+    <u>${fee}<\/u><b>${esc(c.名)}<\/b>${extra?`<em>${esc(extra)}<\/em>`:''}
+    <i>${esc(String(c.说||'').replace('{d}',d))}${esc(words)}<\/i><\/button>`;
+}
+function orbsHtml(s){
+  const cap=Math.max(s.me.每回合||3,s.me.费,1);
+  let h='';for(let i=0;i<cap;i++)h+=`<i class="bt-orb${i<s.me.费?'':' off'}"><\/i>`;
+  return h;
+}
+function peekPile(kind){
+  const s=S;if(!s)return;
+  if(kind==='deck'){
+    const names=[...new Set((s.deck||[]).map(c=>c.名))];
+    return toast(names.length?`抽牌堆 ${s.deck.length} 张，含 ${names.join('、')}（顺序未知）`:`抽牌堆空`);
+  }
+  toast(s.discard.length?s.discard.map(c=>c.名).join(' · '):'弃牌堆空');
+}
+function render(){
+  const s=S;if(!s)return;
+  if(s.spread&&livingFoes(s).length<2)s.spread=false;
+  if(typeof window!=='undefined'&&window.__STAT)window.S=s;
+  syncAim(s);
+  const names=(s.foes||[s.foe]).map(f=>f.名).join(' · ');
+  qs('#bt-title').textContent=`对阵 ${names}`;
+  const extra=(s.allies||[]).length?`队友${s.allies.map(a=>a.名).join('、')}`:'';
+  s.drill=isDrill(s);
+  const gearN=(s.all||[]).filter(c=>String(c.id||'').startsWith('gear:')).length;
+  qs('#bt-sub').textContent=[s.drill?'演练':'',s.体裁&&s.体裁!=='近战'?s.体裁:'',s.起因,s.地形,`牌堆${s.all.length}`,gearN?`器物${gearN}`:'',s.me.dc<1?'凡人套牌':'',extra].filter(Boolean).join(' · ')||'遭遇战';
+  qs('#bt-turn').textContent=String(s.turn);
+  const marked=markOf(s);
+  const host=qs('#bt-foes');
+  host.className='bt-stage'+(s.foes.length>=5?' crowd':s.foes.length>1?' many':'');
+  host.innerHTML=s.foes.map((f,i)=>`<section class="bt-actor foe${f===marked?' is-aim':''}${f.hp<=0?' is-dead':''}" data-foe="${i}" ${f.hp>0?`data-aim="${i}"`:''}>${f===marked?'<i class="bt-aim">锁定<\/i>':''}${intentHtml(s,f)}${actorHtml(f,false)}<\/section>`).join('');
+  const meBox=qs('#bt-me');
+  meBox.className='bt-actor me'+(marked===s.me?' is-aim':'')+(s.me.hp<=0?' is-down':'');
+  meBox.dataset.mark='me';
+  meBox.innerHTML=(marked===s.me?'<i class="bt-aim">锁定<\/i>':'')+actorHtml(s.me,true);
+  const party=qs('#bt-party');
+  [...party.querySelectorAll('[data-ally]')].forEach(el=>el.parentNode.removeChild(el));
+  (s.allies||[]).forEach((a,i)=>{
+    const el=document.createElement('section');
+    el.className='bt-actor ally'+(a===marked?' is-aim':'')+(a.hp<=0?' is-dead':'');
+    el.dataset.ally=String(i);
+    if(a.hp>0)el.dataset.markAlly=String(i);
+    el.innerHTML=(a===marked?'<i class="bt-aim">锁定<\/i>':'')+intentHtml(s,a)+actorHtml(a,false);
+    party.appendChild(el);
+  });
+
+  let html='';
+  if(!s.done){
+    const costB=burnCost(s.me);
+    const down=s.me.hp<=0;
+    const stands=[
+      `<button class="bt-pill" data-stand="melee" type="button" title="${esc(STAND_TIP.melee)}" ${s.done||down||s.me.锁牌||s.me.meleed||s.me.滞涩>=5?'disabled':''}>${esc(styleName(s.体裁,'近身'))}<b>${meleeDmg(s.me,peekFoe(s)||s.foe)}<\/b><\/button>`,
+      `<button class="bt-pill" data-stand="press" type="button" title="${esc(STAND_TIP.press)}" ${s.done||down||s.me.锁牌||s.me.pressed||s.me.sp<1?'disabled':''}>${esc(styleName(s.体裁,'威压'))}<b>Δ${pressDc(s.me)-pressDc(peekFoe(s)||s.foe)}<\/b><\/button>`,
+      `<button class="bt-pill" data-stand="pressall" type="button" title="${esc(STAND_TIP.pressall)}" ${s.done||down||s.me.锁牌||s.me.pressed||s.me.sp<1?'disabled':''}>${esc(styleName(s.体裁,'群压'))}<b>${livingFoes(s).length}<\/b><\/button>`,
+      `<button class="bt-pill" data-stand="burn" type="button" title="${esc(STAND_TIP.burn)}" ${s.done||down||s.me.锁牌||!burnOk(s.me)?'disabled':''}>${esc(styleName(s.体裁,'燃血'))}<b>${costB}<\/b><\/button>`,
+      `<button class="bt-pill" data-stand="flee" type="button" title="${esc(STAND_TIP.flee)}" ${s.done||down||s.me.mp<1||s.me.sp<1?'disabled':''}>${esc(styleName(s.体裁,'遁'))}<b>${Math.round(fleeRate(s))}%<\/b><\/button>`,
+      `<button class="bt-pill${s.spread?' on':''}" data-stand="spread" type="button" title="${esc(STAND_TIP.spread)}" ${s.done||down||livingFoes(s).length<2?'disabled':''}>${esc(styleName(s.体裁,'群攻'))}<b>${s.spread?'开':'关'}<\/b><\/button>`
+    ];
+    s.scenes.forEach((sc,i)=>stands.push(`<button class="bt-pill scene" data-scene="${i}" type="button" title="${esc(sc.说||'')}" ${sc.used||s.done||down?'disabled':''}>${esc(sc.名)}<\/button>`));
+    html+=`<div class="bt-rail">${stands.join('')}<\/div>`;
+    html+=`<div class="bt-energy">${down?'你已倒下，队友还在打。点结束回合。':`目标 ${esc(nm(marked))} · 手牌 ${s.hand.length} · 灵力 ${s.me.费} · 池 ${Math.max(0,Math.round(s.me.mp))}/${s.me.mpMax}${s.spread?` · ${styleName(s.体裁,'群攻')}`:''}${s.me.mp<1?` · 池空，${styleName(s.体裁,'遁')}不了`:''}`}<\/div>`;
+    html+=`<div class="bt-play-row">
+      <div class="bt-piles">
+        <button class="bt-pile" data-pile="deck" type="button"><b>${s.deck.length}<\/b>抽<\/button>
+        <button class="bt-pile" data-pile="discard" type="button"><b>${s.discard.length}<\/b>弃<\/button>
+      <\/div>
+      <div class="bt-fan-wrap"><div class="bt-fan">${down?'':(s.hand.length?s.hand.map((c,i)=>cardHtml(c,i,s,s.hand.length)).join(''):'<span style="color:var(--dim)">没有手牌<\/span>')}<\/div><\/div>
+      <button class="bt-btn${down||!s.hand.length||s.me.费===0?' nudge':''}" data-end type="button">结束<\/button>
+    <\/div>`;
+  }else{
+    const w=s.writeback||{};
+    const fateBox=s.awaitFate?`<div class="bt-fate">
+      <p>打赢了。选每个倒地敌人的下场。击败=还活着（生命写回 8，重伤）。死亡=档案生命 0。逃跑的敌人不会出现在这里。<\/p>
+      ${(s.fate||[]).map((x,i)=>`<div class="bt-fate-row"><b>${esc(x.名)}<\/b>
+        <button class="bt-pick${x.pick==='beat'?' on':''}" data-fate="${i}" data-pick="beat" type="button">击败<\/button>
+        <button class="bt-pick kill${x.pick==='kill'?' on':''}" data-fate="${i}" data-pick="kill" type="button">死亡<\/button>
+      <\/div>`).join('')}
+      <button class="bt-btn" data-fate-ok type="button">确认处置<\/button>
+    <\/div>`:'';
+    html+=`<div class="bt-over"><b>${esc(s.done)}<\/b>
+      <p>${s.awaitFate?'先选处置，确认后再复制战报。主角生命灵力已写回。':s.done==='负'?'战败已记。主角团生死不写死，复制战报，交给下一句按场景决定击杀/击败/濒死。':s.drill?'演练/切磋结束。不写敌人生死。复制战报贴进下一句。':'生命灵力已写回。复制战报，贴进下一句，AI 按这段写画面。'}<\/p>
+      ${fateBox}
+      <textarea class="bt-report" readonly rows="10">${esc(reportText(s))}<\/textarea>
+      <button class="bt-btn" data-copy type="button">复制战报<\/button>
+      <table>
+        <tr><td>生命<\/td><td>${w.生命??'—'} / 100<\/td><\/tr>
+        <tr><td>灵力<\/td><td>${w.灵力??'—'} / 100<\/td><\/tr>
+        <tr><td>神识<\/td><td>${w.神识??'—'} / 100<\/td><\/tr>
+        <tr><td>精血<\/td><td>${w.精血??'—'} / 100<\/td><\/tr>
+        ${w.状态?`<tr><td>状态<\/td><td>${esc(w.状态)}<\/td><\/tr>`:''}
+        ${rows(s.wear).map(([n,v])=>`<tr><td>${esc(n)} 损耗<\/td><td>+${v}<\/td><\/tr>`).join('')}
+      <\/table><\/div>`;
+  }
+  qs('#bt-play').innerHTML=html;
+  qs('#bt-log').innerHTML=s.log.map((x,i,a)=>`<p class="${x.who}${i===a.length-1?' now':''}">${esc(x.t)}<\/p>`).join('')+`<p class="hint">${esc(LOG_HINT)}<\/p>`;
+  qs('#bt-log').scrollTop=qs('#bt-log').scrollHeight;
+  feelAfterRender(s);
+}
+let toastTimer;
+function toast(t){const el=qs('#bt-toast');if(!el)return;el.textContent=t;el.classList.add('on');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('on'),1600)}
+
+function bindFaceSync(){
+  const reload=()=>{if(S)render()};
+  const onStorage=e=>{
+    if(!e.key||[SAY_KEY,OLD_AVATAR_KEY,AVATAR_CHOICE_KEY,AVATAR_CUSTOM_KEY,PORTRAIT_CHOICE_KEY,PORTRAIT_CUSTOM_KEY].includes(e.key))reload();
+  };
+  try{document.addEventListener('csmg-say-sync',reload)}catch(e){}
+  try{document.addEventListener('csmg-avatars-changed',reload)}catch(e){}
+  try{
+    const doc=hostWin().document;
+    if(doc&&doc!==document){
+      doc.addEventListener('csmg-say-sync',reload);
+      doc.addEventListener('csmg-avatars-changed',reload);
+    }
+  }catch(e){}
+  window.addEventListener('storage',onStorage);
+  try{if(hostWin()!==window)hostWin().addEventListener('storage',onStorage)}catch(e){}
+}
+function bind(){
+  document.body.addEventListener('error',e=>{
+    const img=e.target&&e.target.closest&&e.target.closest('img[data-bt-face]');
+    if(img)nextFace(img);
+  },true);
+  bindFaceSync();
+  qs('#bt').addEventListener('click',e=>{
+    if(e.target.closest('#bt-dbg-btn')){
+      setDebugOpen(qs('#bt-dbg').hidden);
+      return;
+    }
+    const dbgAct=e.target.closest('[data-dbg]');
+    if(dbgAct){
+      const act=dbgAct.dataset.dbg;
+      if(act==='close')setDebugOpen(false);
+      else if(act==='reload'){debugOverride='';fillDebugSource(true);toast('已重载楼层原文')}
+      else if(act==='apply')applyDebugTag();
+      return;
+    }
+    if(e.target.closest('#bt-dbg'))return;
+    if(e.target.closest('[data-copy]'))return copyReport();
+    const fateBtn=e.target.closest('[data-fate]');
+    if(fateBtn&&S&&S.fate&&fateBtn.dataset.pick){
+      const row=S.fate[num(fateBtn.dataset.fate)];
+      if(row){row.pick=fateBtn.dataset.pick;render()}
+      return;
+    }
+    if(e.target.closest('[data-fate-ok]'))return confirmFate();
+    const mk=e.target.closest('[data-mark],[data-aim],[data-mark-ally]');
+    if(mk){
+      if(mk.dataset.mark==='me')return setMark(S,'me');
+      if(mk.dataset.aim!=null&&mk.dataset.aim!=='')return setMark(S,'foe',num(mk.dataset.aim));
+      if(mk.dataset.markAlly!=null&&mk.dataset.markAlly!=='')return setMark(S,'ally',num(mk.dataset.markAlly));
+    }
+    if(busy)return;
+    const p=e.target.closest('[data-play]');if(p)return playCard(num(p.dataset.play));
+    const sc=e.target.closest('[data-scene]');if(sc)return playScene(num(sc.dataset.scene));
+    const st=e.target.closest('[data-stand]');if(st){
+      const k=st.dataset.stand;
+      return k==='press'?standPress(false):k==='pressall'?standPress(true):k==='burn'?standBurn():k==='melee'?standMelee():k==='spread'?toggleSpread():standFlee();
+    }
+    const pile=e.target.closest('[data-pile]');if(pile)return peekPile(pile.dataset.pile);
+    if(e.target.closest('[data-end]'))return endTurn(false);
+  });
+}
+async function init(){
+  qs('#bt-sub').textContent='正在连接 MVU';
+  if(typeof waitGlobalInitialized==='function')await waitGlobalInitialized('Mvu');
+  bind();
+  fillDebugSource(true);
+  const media=hydrateMedia().catch(()=>{});
+  const assets=loadAssets().catch(()=>{});
+  const stat=readStat(),saved=obj(stat._战斗);
+  const fresh=newBattle();
+  if(String(saved.战斗ID||'')===fresh.id&&String(saved.状态||'')!==''){
+    S=restore(saved,fresh);
+    if(!S.done&&!S.hand.length)startTurn(S);
+  }else{
+    S=fresh;
+    const names=S.all.map(c=>c.名);
+    const brief=[...names.reduce((m,n)=>m.set(n,(m.get(n)||0)+1),new Map())]
+      .map(([n,k])=>k>1?`${n}×${k}`:n).join(' ');
+    const foeLine=S.foes.map(f=>`${f.名}DC${f.dc}`).join(' ');
+    const allyLine=S.allies.length?` · 队友 ${S.allies.map(a=>a.名).join('、')}`:'';
+    const shiLine=(S.势说||[]).length?` · 势 ${S.势说.join(' · ')}`:'';
+    log(S,'sys',`开场 你DC${S.me.dc} ${foeLine}${allyLine}${shiLine}${S.体裁&&S.体裁!=='近战'?` · 体裁 ${S.体裁}`:''} · 牌堆${S.all.length}：${brief}`);
+    startTurn(S);
+    await save();
+  }
+  await media;
+  render();
+  assets.then(()=>{if(S)render()});
+}
+function bootDemo(){
+  bind();
+  const me=makeActor('你',49,{生命:22,灵力:70,神识:80,精血:90},{roots:['火','木'],每回合:4});
+  me.费=4;me.显示='你';
+  const foe=makeActor('惠美子',49,{生命:68},{显示:'惠美子',intents:[]});
+  foe.格挡=8;foe.势标='凝重';
+  const foe2=makeActor('铁钩客',25,{生命:80},{显示:'铁钩客',灼烧:2,intents:[]});
+  const ally=makeActor('李沐子',49,{生命:86},{roots:['水'],显示:'李沐子',intents:[]});
+  const cards=[
+    {uid:'a',名:'裂空斩',类:'atk',费:1,基:14,说:'造成 {d} 点伤害',词:['破防']},
+    {uid:'b',名:'金罡',类:'def',费:1,基:10,说:'获得 {d} 格挡',词:['护盾']},
+    {uid:'c',id:'guiyuan',名:'归元',类:'util',费:0,基:0,说:'调息回气',词:['抽牌']},
+    {uid:'d',名:'燃锋',类:'atk',费:2,基:22,说:'重创 {d}',词:['多段']}
+  ];
+  S={
+    id:'demo',seed:7,turn:3,done:'',aim:0,mark:{k:'foe',i:0},awaitFate:false,fate:[],
+    me,foe,foes:[foe,foe2],allies:[ally],hand:cards,
+    discard:[{uid:'x',名:'已弃',类:'def',费:1,基:6,说:'',词:[]}],
+    deck:[{uid:'p1',名:'余焰',类:'atk',费:1,基:8,说:'',词:[]}],
+    all:cards,scenes:[{k:'废墟',名:'废墟',说:'借残垣换位',used:false}],
+    地形:'废墟',起因:'巷口围杀',性质:'演练',体裁:'近战',势:[],log:[
+      {who:'sys',t:'T1 开场 你DC49 惠美子DC49'},
+      {who:'me',t:'T2 你 裂空斩 → 惠美子 血-18'},
+      {who:'foe',t:'T2 惠美子 反击 → 你 血-12'}
+    ],wear:{},fleeTry:0,迷雾:0,spread:false,drill:true
+  };
+  debugOverride='<战斗>\n体裁: 近战\n对手: 惠美子\n对手: 铁钩客 | 筑基中期\n队友: 李沐子\n起因: 巷口围杀\n地形: 废墟\n场景: 废墟 | 狭窄\n</战斗>';
+  fillDebugSource(true);
+  render();
+  setTimeout(()=>{fxFloat(foe,'-22','dmg');fxShake(foe);fxImpact(foe);fxFlash('hit');fxSlash(foe);fxCast('裂空斩','atk')},360);
+}
+if(typeof $==='function'&&typeof errorCatched==='function')$(errorCatched(init));
+else bootDemo();
+</script>
+</body>
+</html>
+```

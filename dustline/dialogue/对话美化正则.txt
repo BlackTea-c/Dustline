@@ -1,0 +1,386 @@
+```html
+<!doctype html>
+<!-- 酒馆助手局部正则「查找」：/[\[［]说[|｜][ \t\u00A0]*([^\s|｜\[［\]］]{1,24})[ \t\u00A0]*[|｜][ \t\u00A0]*([^\s|｜\[［\]］]{1,24})[ \t\u00A0]*[|｜][ \t\u00A0]*([^|｜\[［\]］\r\n]{1,800}?)[ \t\u00A0]*[\]］]/g -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>对话美化 v5</title>
+<style>
+html,body{margin:0;padding:0;background:transparent;color:#f8fbff;overflow:visible}
+.csmg-say-app{position:relative;max-width:100%;font:13px/1.45 "Songti SC","STSong","PingFang SC","Noto Serif SC",serif}
+.csmg-say{
+  --glow:#72e7ff;--glow-rgb:114,231,255;
+  display:inline-flex;align-items:center;gap:12px;max-width:100%;
+  margin:10px 0;vertical-align:middle;
+}
+.csmg-say[data-type="微笑"],.csmg-say[data-type="开心"],.csmg-say[data-type="喜欢"]{--glow:#ffd277;--glow-rgb:255,210,119}
+.csmg-say[data-type="害羞"]{--glow:#ff91c8;--glow-rgb:255,145,200}
+.csmg-say[data-type="凝重"]{--glow:#a9c8ff;--glow-rgb:169,200,255}
+.csmg-say[data-type="生气"],.csmg-say[data-type="战斗"]{--glow:#ff665c;--glow-rgb:255,102,92}
+.csmg-say[data-type="悲伤"],.csmg-say[data-type="受伤"]{--glow:#879cff;--glow-rgb:135,156,255}
+.csmg-say[data-type="惊讶"]{--glow:#e9ff86;--glow-rgb:233,255,134}
+.csmg-say[data-type="厌恶"]{--glow:#7ee6a2;--glow-rgb:126,230,162}
+.csmg-say[data-type="迷糊"]{--glow:#c89cff;--glow-rgb:200,156,255}
+.csmg-say[data-side="before"]{flex-direction:row-reverse}
+.csmg-say-q{
+  position:relative;min-width:0;padding:6px 12px 7px;cursor:pointer;
+  color:#f8fbff;font-size:1.04em;line-height:1.7;letter-spacing:.06em;
+  text-shadow:0 0 5px rgba(var(--glow-rgb),.72),0 0 16px rgba(var(--glow-rgb),.3);
+  border-bottom:1px solid rgba(var(--glow-rgb),.75);
+  background:linear-gradient(90deg,rgba(var(--glow-rgb),.13),transparent 32%,rgba(var(--glow-rgb),.06)),rgba(8,11,17,.36);
+  box-shadow:0 5px 22px rgba(var(--glow-rgb),.07),inset 0 -1px rgba(var(--glow-rgb),.15);
+  overflow:hidden;isolation:isolate;
+  animation:csmgSayTextIn .42s cubic-bezier(.2,.8,.2,1) both;
+}
+.csmg-say[data-side="before"] .csmg-say-q{animation-name:csmgSayTextInR}
+.csmg-say-q::before{content:"“";color:var(--glow);margin-right:3px;font-size:1.22em;vertical-align:-.08em}
+.csmg-say-q::after{content:"”";color:var(--glow);margin-left:3px;font-size:1.22em;vertical-align:-.08em}
+.csmg-say-q>i{
+  position:absolute;inset:-40% auto -40% -35%;z-index:-1;width:28%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);
+  transform:skewX(-18deg);animation:csmgSaySweep 4.2s ease-in-out infinite;
+}
+.csmg-say-wrap{position:relative;flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:5px}
+.csmg-say-av{
+  position:relative;width:58px;height:58px;border-radius:50%;cursor:pointer;
+  background:radial-gradient(circle at 32% 24%,rgba(var(--glow-rgb),.48),rgba(12,15,22,.98) 70%);
+  border:1px solid var(--glow);
+  box-shadow:0 0 0 3px rgba(8,11,17,.9),0 0 14px rgba(var(--glow-rgb),.52);
+  animation:csmgSayAvatarIn .48s cubic-bezier(.2,1.35,.3,1) both,csmgSayBreathe 3.4s ease-in-out .5s infinite;
+}
+.csmg-say[data-side="before"] .csmg-say-av{animation-name:csmgSayAvatarInL,csmgSayBreathe}
+.csmg-say-av::before{
+  content:"";position:absolute;left:-7px;top:50%;width:10px;height:10px;margin-top:-5px;z-index:5;
+  background:#0b0e15;border-left:1px solid var(--glow);border-bottom:1px solid var(--glow);transform:rotate(45deg);
+}
+.csmg-say[data-side="before"] .csmg-say-av::before{left:auto;right:-7px}
+.csmg-say-av b{position:absolute;inset:0;display:grid;place-items:center;overflow:hidden;color:#f7fbff;font:600 20px/1 "Songti SC","STSong",serif;text-shadow:0 0 8px rgba(var(--glow-rgb),.8)}
+.csmg-say-av b>i{display:block;width:1.1em;overflow:hidden;white-space:nowrap;font-style:normal}
+.csmg-say-face{position:absolute;inset:0;border-radius:50%;background-position:center 12%;background-size:cover;background-repeat:no-repeat}
+.csmg-say-portrait{z-index:1}.csmg-say-default{z-index:2}.csmg-say-mood{z-index:3;display:none}.csmg-say-local{z-index:4;display:none}
+.csmg-say.is-local .csmg-say-local{display:block}
+.csmg-say.is-local .csmg-say-online{display:none!important;background:none!important}
+.csmg-say[data-type="微笑"] .csmg-m-smile,.csmg-say[data-type="开心"] .csmg-m-happy,.csmg-say[data-type="害羞"] .csmg-m-shy,.csmg-say[data-type="凝重"] .csmg-m-serious,.csmg-say[data-type="生气"] .csmg-m-angry,.csmg-say[data-type="悲伤"] .csmg-m-sad,.csmg-say[data-type="受伤"] .csmg-m-hurt,.csmg-say[data-type="惊讶"] .csmg-m-surprised,.csmg-say[data-type="战斗"] .csmg-m-battle,.csmg-say[data-type="厌恶"] .csmg-m-disgusted,.csmg-say[data-type="喜欢"] .csmg-m-like,.csmg-say[data-type="迷糊"] .csmg-m-dazed{display:block}
+.csmg-say:hover .csmg-say-av{transform:translateY(-2px) scale(1.06)}
+.csmg-say.is-flip .csmg-say-q,.csmg-say.is-flip .csmg-say-av{animation:csmgSayFlip .28s ease both}
+.csmg-say-box{margin-top:8px;padding:10px;border:1px solid rgba(232,201,138,.28);border-radius:12px;background:linear-gradient(180deg,#171410,#0c0b09);color:#efe6d2}
+.csmg-say-box[hidden]{display:none!important}
+.csmg-say-box .hd{display:flex;align-items:center;gap:8px;margin-bottom:8px;color:#e8c98a;letter-spacing:.14em;font-size:12px}
+.csmg-say-box .hd i{margin-left:auto;font:400 10px/1 ui-monospace,monospace;color:#8a8170;font-style:normal}
+.csmg-say-box .x{width:24px;height:24px;border:0;border-radius:50%;background:transparent;color:#cbb68a;cursor:pointer}
+.csmg-say-box .row{display:flex;align-items:center;gap:6px;margin:0 0 8px}
+.csmg-say-box .lab{flex:0 0 42px;color:#8a8170;font-size:11px}
+.csmg-say-box .chip,.csmg-say-box .btn{min-height:28px;padding:0 8px;border:1px solid rgba(232,201,138,.28);border-radius:8px;background:#14110d;color:#efe6d2;cursor:pointer;font:inherit}
+.csmg-say-box .chip{flex:1}
+.csmg-say-box .chip.on,.csmg-say-box .mood.on{border-color:#e8c98a;color:#e8c98a}
+.csmg-say-box .name,.csmg-say-box .url{flex:1;min-width:0;height:30px;padding:0 8px;border:1px solid rgba(232,201,138,.22);border-radius:8px;background:#14110d;color:#efe6d2;font:inherit}
+.csmg-say-box .url{width:100%;margin-top:8px}
+.csmg-say-box .moods{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 8px}
+.csmg-say-box .mood{width:34px;height:34px;padding:0;border:1px solid rgba(232,201,138,.2);border-radius:9px;background:#14110d;color:#cbb68a;cursor:pointer;font-size:10px;position:relative}
+.csmg-say-box .mood.has:after{content:"";position:absolute;right:3px;top:3px;width:6px;height:6px;border-radius:50%;background:#e8c98a}
+.csmg-say-box .prev{width:52px;height:52px;flex:0 0 52px;border-radius:50%;border:1px solid rgba(232,201,138,.35);overflow:hidden;display:grid;place-items:center;background:#14110d;color:#8a8170}
+.csmg-say-box .prev img{width:100%;height:100%;object-fit:cover}
+.csmg-say-box .acts{display:flex;flex-wrap:wrap;gap:6px;flex:1}
+.csmg-say-box .btn.d{color:#f0a8a0}
+.csmg-say-box .file{display:none!important}
+.csmg-say-box .hint,.csmg-say-tip{margin:8px 0 0;color:#8a8170;font-size:10px;line-height:1.5}
+.csmg-say-tip{min-height:16px}
+@keyframes csmgSayTextIn{from{opacity:0;transform:translateX(-8px);filter:blur(2px)}to{opacity:1;transform:none;filter:none}}
+@keyframes csmgSayTextInR{from{opacity:0;transform:translateX(8px);filter:blur(2px)}to{opacity:1;transform:none;filter:none}}
+@keyframes csmgSayAvatarIn{from{opacity:0;transform:translateX(8px) scale(.65)}to{opacity:1;transform:none}}
+@keyframes csmgSayAvatarInL{from{opacity:0;transform:translateX(-8px) scale(.65)}to{opacity:1;transform:none}}
+@keyframes csmgSayBreathe{0%,100%{box-shadow:0 0 0 3px rgba(8,11,17,.9),0 0 10px rgba(var(--glow-rgb),.35)}50%{box-shadow:0 0 0 3px rgba(8,11,17,.9),0 0 20px rgba(var(--glow-rgb),.68)}}
+@keyframes csmgSaySweep{0%,58%{left:-35%;opacity:0}68%{opacity:.8}88%,100%{left:125%;opacity:0}}
+@keyframes csmgSayFlip{from{opacity:.35;filter:blur(2px)}to{opacity:1;filter:none}}
+@media(max-width:768px){.csmg-say-av{width:50px;height:50px}.csmg-say-av b{font-size:17px}.csmg-say-q{font-size:1em;padding:5px 9px 6px}}
+</style>
+</head>
+<body>
+<div class="csmg-say-app" data-ver="v5">
+<span class="csmg-say" data-char="$1" data-type="$2" data-side="after"><span class="csmg-say-q" title="点一下切换头像前后"><i></i>$3</span><span class="csmg-say-wrap"><span class="csmg-say-av" title="$1"><b><i>$1</i></b><span class="csmg-say-face csmg-say-online csmg-say-portrait" style="background-image:url('https://raw.githubusercontent.com/BlackTea-c/LIMIZI/main/assets/charactor_lihui/$1/$1_portrait_01.png')"></span><span class="csmg-say-face csmg-say-online csmg-say-default" style="background-image:url('https://raw.githubusercontent.com/BlackTea-c/LIMIZI/main/assets/charactor_avatar/$1/$1_avatar_default.png')"></span><span class="csmg-say-face csmg-say-online csmg-say-mood csmg-m-smile" style="background-image:url('https://raw.githubusercontent.com/BlackTea-c/LIMIZI/main/assets/charactor_avatar/$1/$1_avatar_smile.png')"></span><span class="csmg-say-face csmg-say-online csmg-say-mood csmg-m-happy" style="background-image:url('https://raw.githubusercontent.com/BlackTea-c/LIMIZI/main/assets/charactor_avatar/$1/$1_avatar_开心.png')"></span><span class="csmg-say-face csmg-say-online csmg-say-mood csmg-m-shy" style="background-image:url('https://raw.githubusercontent.com/BlackTea-c/LIMIZI/main/assets/charactor_avatar/$1/$1_avatar_shy.png')"></span><span class="csmg-say-face csmg-say-online csmg-say-mood csmg-m-serious" style="background-image:url('https://raw.githubusercontent.com/BlackTea-c/LIMIZI/main/assets/charactor_avatar/$1/$1_avatar_serious.png')"></span><span class="csmg-say-face csmg-say-online csmg-say-mood csmg-m-angry" style="background-image:url('https://raw.githubusercontent.com/BlackTea-c/LIMIZI/main/assets/charactor_avatar/$1/$1_avatar_angry.png')"></span><span class="csmg-say-face csmg-say-online csmg-say-mood csmg-m-sad" style="background-image:url('https://raw.githubusercontent.com/BlackTea-c/LIMIZI/main/assets/charactor_avatar/$1/$1_avatar_sad.png')"></span><span class="csmg-say-face csmg-say-online csmg-say-mood csmg-m-hurt" style="background-image:url('https://raw.githubusercontent.com/BlackTea-c/LIMIZI/main/assets/charactor_avatar/$1/$1_avatar_hurt.png')"></span><span class="csmg-say-face csmg-say-online csmg-say-mood csmg-m-surprised" style="background-image:url('https://raw.githubusercontent.com/BlackTea-c/LIMIZI/main/assets/charactor_avatar/$1/$1_avatar_surprised.png')"></span><span class="csmg-say-face csmg-say-online csmg-say-mood csmg-m-battle" style="background-image:url('https://raw.githubusercontent.com/BlackTea-c/LIMIZI/main/assets/charactor_avatar/$1/$1_avatar_battle.png')"></span><span class="csmg-say-face csmg-say-online csmg-say-mood csmg-m-disgusted" style="background-image:url('https://raw.githubusercontent.com/BlackTea-c/LIMIZI/main/assets/charactor_avatar/$1/$1_avatar_厌恶.png')"></span><span class="csmg-say-face csmg-say-online csmg-say-mood csmg-m-like" style="background-image:url('https://raw.githubusercontent.com/BlackTea-c/LIMIZI/main/assets/charactor_avatar/$1/$1_avatar_喜欢.png')"></span><span class="csmg-say-face csmg-say-online csmg-say-mood csmg-m-dazed" style="background-image:url('https://raw.githubusercontent.com/BlackTea-c/LIMIZI/main/assets/charactor_avatar/$1/$1_avatar_迷糊.png')"></span><span class="csmg-say-face csmg-say-local"></span></span></span></span>
+<div class="csmg-say-box" hidden>
+  <div class="hd">对话美化 <i>v5 · 本机优先</i><button type="button" class="x csmg-say-close">×</button></div>
+  <div class="row"><i class="lab">排版</i><button type="button" class="chip" data-side="before">头像在前</button><button type="button" class="chip" data-side="after">头像在后</button></div>
+  <div class="row"><i class="lab">角色</i><input class="name" maxlength="40" placeholder="与角色名一致"></div>
+  <div class="moods"></div>
+  <div class="row">
+    <div class="prev">容</div>
+    <div class="acts">
+      <label class="btn">上传<input type="file" class="file" accept="image/*"></label>
+      <button type="button" class="btn csmg-say-url">存网址</button>
+      <button type="button" class="btn d csmg-say-clear">清除此格</button>
+      <button type="button" class="btn d csmg-say-forget">删除角色</button>
+    </div>
+  </div>
+  <input class="url" placeholder="也可粘贴图片 URL，再点存网址">
+  <p class="hint">点对话正文切换头像前后；点头像上传本机图。先点情绪格再上传。优先级：本机情绪 → 本机默认 → 美化2旧库 → MVU本机 → 线上图 → 首字。</p>
+  <p class="csmg-say-tip"></p>
+</div>
+</div>
+<script>
+function init() {
+  var KEY = 'csmg.say.v1';
+  var OLD = 'csmg_avatars';
+  var MV1 = 'mvu.avatarChoice.v1';
+  var MV2 = 'mvu.customAvatars.v1';
+  var EVT = 'csmg-say-sync';
+  var MOODS = ['默认', '微笑', '开心', '害羞', '凝重', '生气', '悲伤', '受伤', '惊讶', '战斗', '厌恶', '喜欢', '迷糊'];
+  var ALIAS = {沐子: ['沐子', '李沐子'], 李沐子: ['李沐子', '沐子'], 祁谣: ['祁谣', '祁瑶'], 祁瑶: ['祁瑶', '祁谣'], 敖烈: ['敖烈', '熬烈'], 熬烈: ['熬烈', '敖烈']};
+  var box = document.querySelector('.csmg-say');
+  var panel = document.querySelector('.csmg-say-box');
+  var nameInput = document.querySelector('.csmg-say-box .name');
+  var fileInput = document.querySelector('.csmg-say-box .file');
+  var urlInput = document.querySelector('.csmg-say-box .url');
+  var moodsEl = document.querySelector('.csmg-say-box .moods');
+  var prev = document.querySelector('.csmg-say-box .prev');
+  var tipEl = document.querySelector('.csmg-say-tip');
+  var mood = '默认';
+  var store = {layout: 'after', faces: {}};
+
+  function ls() {
+    try { return window.parent.localStorage; } catch (e) { return localStorage; }
+  }
+  function parentDoc() {
+    try { return window.parent.document; } catch (e) { return document; }
+  }
+  function ok(u) { return typeof u === 'string' && /^(data:image\/|https?:\/\/|blob:)/i.test(u); }
+  function map(k) {
+    try {
+      var x = JSON.parse(ls().getItem(k) || '{}');
+      return x && typeof x === 'object' && !Array.isArray(x) ? x : {};
+    } catch (e) { return {}; }
+  }
+  function names(n) {
+    n = String(n || '').trim();
+    var extra = ALIAS[n] || [];
+    return [n].concat(extra).filter(function (x, i, arr) { return x && arr.indexOf(x) === i; });
+  }
+  function norm(t) {
+    t = String(t || '').trim() || '默认';
+    return MOODS.indexOf(t) >= 0 ? t : '默认';
+  }
+  function read() {
+    var x = map(KEY);
+    var faces = x.faces && typeof x.faces === 'object' ? x.faces : {};
+    var out = {};
+    Object.keys(faces).forEach(function (n) {
+      var b = faces[n];
+      var c = {};
+      if (!b || typeof b !== 'object') return;
+      MOODS.forEach(function (m) { if (ok(b[m])) c[m] = b[m]; });
+      if (Object.keys(c).length) out[n] = c;
+    });
+    return {layout: x.layout === 'before' ? 'before' : 'after', faces: out};
+  }
+  function save() {
+    try { ls().setItem(KEY, JSON.stringify(store)); emit(); return true; }
+    catch (e) { tip(e && e.name === 'QuotaExceededError' ? '本机存储已满' : '无法保存'); return false; }
+  }
+  function emit() {
+    try { parentDoc().dispatchEvent(new CustomEvent(EVT)); } catch (e) {}
+  }
+  function pick(n, t) {
+    var i, a = names(n), b, rec, list, hit;
+    t = norm(t);
+    for (i = 0; i < a.length; i++) { b = store.faces[a[i]]; if (t !== '默认' && b && ok(b[t])) return b[t]; }
+    for (i = 0; i < a.length; i++) { b = store.faces[a[i]]; if (b && ok(b['默认'])) return b['默认']; }
+    rec = map(OLD);
+    for (i = 0; i < a.length; i++) {
+      b = rec[a[i]];
+      if (!b || typeof b !== 'object') continue;
+      if (t !== '默认' && b.emotions && ok(b.emotions[t])) return b.emotions[t];
+      if (ok(b.avatar)) return b.avatar;
+    }
+    rec = map(MV1);
+    for (i = 0; i < a.length; i++) if (ok(rec[a[i]])) return rec[a[i]];
+    rec = map(MV2);
+    for (i = 0; i < a.length; i++) {
+      list = rec[a[i]];
+      if (Array.isArray(list)) {
+        hit = list.filter(function (v) { return v && ok(v.url); })[0];
+        if (hit) return hit.url;
+      }
+    }
+    return '';
+  }
+  function tip(t) { if (tipEl) tipEl.textContent = t || ''; }
+  function who() { return String(nameInput.value || '').trim(); }
+  function setFace(n, t, u) {
+    n = String(n || '').trim();
+    t = norm(t);
+    if (!n) { tip('先填角色名'); return false; }
+    var b = Object.assign({}, store.faces[n] || {});
+    if (u) b[t] = u; else delete b[t];
+    if (Object.keys(b).length) store.faces[n] = b; else delete store.faces[n];
+    if (!save()) return false;
+    paint();
+    panelView();
+    return true;
+  }
+  function paint() {
+    if (!box) return;
+    box.setAttribute('data-side', store.layout);
+    var loc = box.querySelector('.csmg-say-local');
+    var u = pick(box.getAttribute('data-char'), box.getAttribute('data-type'));
+    if (!loc) return;
+    if (u) {
+      loc.style.backgroundImage = 'url(' + JSON.stringify(u) + ')';
+      box.classList.add('is-local');
+    } else {
+      loc.style.backgroundImage = '';
+      box.classList.remove('is-local');
+    }
+  }
+  function panelView() {
+    document.querySelectorAll('.csmg-say-box [data-side]').forEach(function (b) {
+      b.classList.toggle('on', b.getAttribute('data-side') === store.layout);
+    });
+    var bag = store.faces[who()] || {};
+    moodsEl.querySelectorAll('.mood').forEach(function (b) {
+      var k = b.getAttribute('data-mood');
+      b.classList.toggle('on', k === mood);
+      b.classList.toggle('has', !!bag[k]);
+    });
+    var u = pick(who(), mood);
+    prev.replaceChildren();
+    if (u) {
+      var im = document.createElement('img');
+      im.alt = '';
+      im.src = u;
+      prev.appendChild(im);
+    } else prev.textContent = (who() || '容').slice(0, 1);
+  }
+  function shrink(url) {
+    return new Promise(function (resolve) {
+      var im = new Image();
+      im.onload = function () {
+        var w0 = im.naturalWidth || im.width || 1;
+        var h0 = im.naturalHeight || im.height || 1;
+        var s = Math.min(1, 360 / Math.max(w0, h0));
+        var c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(w0 * s));
+        c.height = Math.max(1, Math.round(h0 * s));
+        var x = c.getContext('2d');
+        if (!x) return resolve(url);
+        x.imageSmoothingEnabled = true;
+        x.drawImage(im, 0, 0, c.width, c.height);
+        var out = '';
+        try { out = c.toDataURL('image/webp', 0.84); } catch (e) {}
+        if (!ok(out)) { try { out = c.toDataURL('image/jpeg', 0.84); } catch (e) {} }
+        resolve(ok(out) ? out : url);
+      };
+      im.onerror = function () { resolve(url); };
+      im.src = url;
+    });
+  }
+  function readFile(file) {
+    return new Promise(function (resolve, reject) {
+      if (!file) return reject(new Error('没有文件'));
+      if (file.type && file.type.indexOf('image/') !== 0) return reject(new Error('请选图片'));
+      if (file.size > 8 * 1024 * 1024) return reject(new Error('图片请小于 8MB'));
+      var r = new FileReader();
+      r.onerror = function () { reject(new Error('读不了图')); };
+      r.onload = function () { resolve(String(r.result || '')); };
+      r.readAsDataURL(file);
+    });
+  }
+  function setLayout(side) {
+    store.layout = side === 'before' ? 'before' : 'after';
+    save();
+    if (box) {
+      box.classList.remove('is-flip');
+      void box.offsetWidth;
+      box.classList.add('is-flip');
+    }
+    paint();
+    panelView();
+  }
+  function openPanel() {
+    if (box && !nameInput.value) nameInput.value = String(box.getAttribute('data-char') || '').trim();
+    if (box) mood = norm(box.getAttribute('data-type'));
+    panel.hidden = false;
+    panelView();
+  }
+
+  MOODS.forEach(function (k) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'mood';
+    b.setAttribute('data-mood', k);
+    b.textContent = k === '默认' ? '默' : k.slice(0, 1);
+    b.title = k;
+    b.onclick = function () { mood = k; panelView(); };
+    b.ondblclick = function () { fileInput.click(); };
+    b.oncontextmenu = function (e) {
+      e.preventDefault();
+      if (who() && store.faces[who()] && store.faces[who()][k] && setFace(who(), k, '')) tip('已清除');
+    };
+    moodsEl.appendChild(b);
+  });
+
+  document.querySelector('.csmg-say-q').addEventListener('click', function () {
+    setLayout(store.layout === 'before' ? 'after' : 'before');
+  });
+  document.querySelector('.csmg-say-av').addEventListener('click', openPanel);
+  document.querySelector('.csmg-say-close').onclick = function () { panel.hidden = true; };
+  document.querySelectorAll('.csmg-say-box [data-side]').forEach(function (b) {
+    b.onclick = function () { setLayout(b.getAttribute('data-side')); };
+  });
+  nameInput.addEventListener('input', panelView);
+  fileInput.addEventListener('change', function () {
+    var f = fileInput.files && fileInput.files[0];
+    fileInput.value = '';
+    if (!f) return;
+    readFile(f).then(shrink).then(function (u) {
+      if (setFace(who(), mood, u)) tip('已保存 ' + who() + ' · ' + mood);
+    }).catch(function (e) { tip(e.message || '上传失败'); });
+  });
+  document.querySelector('.csmg-say-url').onclick = function () {
+    var v = String(urlInput.value || '').trim();
+    if (!v) return tip('先粘贴地址');
+    if (/^data:image\//i.test(v)) {
+      shrink(v).then(function (u) { if (setFace(who(), mood, u)) { urlInput.value = ''; tip('已保存'); } });
+      return;
+    }
+    if (!/^https?:\/\//i.test(v)) return tip('要用 http(s) 地址');
+    fetch(v, {mode: 'cors', cache: 'no-store'}).then(function (r) {
+      if (!r.ok) throw new Error('读不到图');
+      return r.blob();
+    }).then(function (blob) {
+      return readFile(new File([blob], 'a.png', {type: blob.type || 'image/png'}));
+    }).then(shrink).then(function (u) {
+      if (setFace(who(), mood, u)) { urlInput.value = ''; tip('已保存'); }
+    }).catch(function () {
+      var im = new Image();
+      im.onload = function () { if (setFace(who(), mood, v)) { urlInput.value = ''; tip('已记下网址'); } };
+      im.onerror = function () { tip('线上图读不到'); };
+      im.src = v;
+    });
+  };
+  document.querySelector('.csmg-say-clear').onclick = function () { if (setFace(who(), mood, '')) tip('已清除'); };
+  document.querySelector('.csmg-say-forget').onclick = function () {
+    var n = who();
+    if (!n || !store.faces[n]) return tip('没有本机头像');
+    delete store.faces[n];
+    if (save()) { paint(); panelView(); tip('已删除 ' + n); }
+  };
+
+  function reload() { store = read(); paint(); if (!panel.hidden) panelView(); }
+  try { parentDoc().addEventListener(EVT, reload); } catch (e) {}
+  window.addEventListener('storage', function (e) {
+    if (!e.key || e.key === KEY || e.key === OLD || e.key === MV1 || e.key === MV2) reload();
+  });
+
+  store = read();
+  if (box) nameInput.value = String(box.getAttribute('data-char') || '').trim();
+  paint();
+  console.info('[对话美化]', 'v5', store.layout);
+}
+
+if (typeof $ === 'function' && typeof errorCatched === 'function') $(errorCatched(init));
+else init();
+</script>
+</body>
+</html>
+```
